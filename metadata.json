@@ -1,0 +1,6 @@
+{
+  "name": "Orale' — Dental Clinic Booking System",
+  "description": "Complete appointment management system for Orale' Dental Clinic featuring patient booking, dentist scheduling, real-time availability validation, and admin clinic dashboard.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
