@@ -186,7 +186,7 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
                             <span className="text-slate-400 text-xs block">Procedure</span>
                             <span className="font-bold text-slate-900">{s?.name}</span>
                             <span className="text-xs text-slate-500 block font-mono">
-                              {s?.durationMinutes} mins · ${s?.price}
+                              {s?.durationMinutes} mins · ₱{s?.price?.toLocaleString()}
                             </span>
                           </div>
 

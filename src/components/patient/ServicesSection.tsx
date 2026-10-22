@@ -110,7 +110,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
                 <div>
                   <div className="text-[11px] text-slate-400 uppercase font-medium">Indicative fee</div>
                   <div className="text-xl font-bold font-mono tabular-nums text-slate-900">
-                    ${service.price}
+                    ₱{service.price.toLocaleString()}
                   </div>
                 </div>
 

@@ -21,17 +21,23 @@ import {
   INITIAL_NOTIFICATIONS,
 } from '../data/seedData';
 
+// Storage keys bumped to v2 for Philippine Peso and Filipino clinical staff migration
 const STORAGE_KEYS = {
-  SERVICES: 'orale_services_v1',
-  DENTISTS: 'orale_dentists_v1',
-  WORKING_HOURS: 'orale_working_hours_v1',
-  TIME_OFF: 'orale_time_off_v1',
-  PATIENTS: 'orale_patients_v1',
-  APPOINTMENTS: 'orale_appointments_v1',
-  NOTIFICATIONS: 'orale_notifications_v1',
-  AUDIT_LOGS: 'orale_audit_logs_v1',
-  SETTINGS: 'orale_settings_v1',
+  SERVICES: 'orale_services_v2_ph',
+  DENTISTS: 'orale_dentists_v2_ph',
+  WORKING_HOURS: 'orale_working_hours_v2_ph',
+  TIME_OFF: 'orale_time_off_v2_ph',
+  PATIENTS: 'orale_patients_v2_ph',
+  APPOINTMENTS: 'orale_appointments_v2_ph',
+  NOTIFICATIONS: 'orale_notifications_v2_ph',
+  AUDIT_LOGS: 'orale_audit_logs_v2_ph',
+  SETTINGS: 'orale_settings_v2_ph',
 };
+
+// Format currency in Philippine Peso
+export function formatPeso(amount: number): string {
+  return `₱${(amount || 0).toLocaleString()}`;
+}
 
 // Helper to parse "HH:MM" into minutes from midnight
 export function timeToMinutes(timeStr: string): number {
@@ -46,7 +52,7 @@ export function minutesToTime(mins: number): string {
   return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
 }
 
-// Format date nicely e.g. "Thu, Oct 22, 2026"
+// Format date nicely e.g. "Thu, Oct 23, 2026"
 export function formatDateReadable(dateStr: string): string {
   try {
     const [y, m, d] = dateStr.split('-').map(Number);
@@ -297,7 +303,7 @@ export const DentalStorage = {
     const workEndMins = timeToMinutes(wh.endTime);
 
     if (reqStartMins < workStartMins || reqEndMins > workEndMins) {
-      return { hasConflict: true, reason: `Requested time falls outside working hours (${wh.startTime} - ${wh.endTime}).` };
+      return { hasConflict: true, reason: `Requested time falls outside clinic hours (${wh.startTime} - ${wh.endTime}).` };
     }
 
     // Check break time
@@ -321,7 +327,7 @@ export const DentalStorage = {
 
     for (const apt of appointments) {
       const existingStart = timeToMinutes(apt.startTime);
-      const existingEnd = timeToMinutes(apt.endTime) + bufferMinutes; // buffer included
+      const existingEnd = timeToMinutes(apt.endTime) + bufferMinutes;
       const newStart = reqStartMins;
       const newEnd = reqEndMins + bufferMinutes;
 
@@ -340,7 +346,7 @@ export const DentalStorage = {
   // Calculate available time slots for a given dentist (or any available dentist) and date
   getAvailableSlots(params: {
     serviceId: string;
-    dentistId?: string; // 'any' or specific ID
+    dentistId?: string;
     date: string;
   }): { time: string; dentistId: string; dentistName: string }[] {
     const { serviceId, dentistId, date } = params;
@@ -355,7 +361,6 @@ export const DentalStorage = {
     if (dentistId && dentistId !== 'any') {
       candidateDentists = candidateDentists.filter((d) => d.id === dentistId);
     } else {
-      // Filter dentists capable of performing this service
       candidateDentists = candidateDentists.filter((d) =>
         d.assignedServiceIds.includes(serviceId)
       );
@@ -373,7 +378,6 @@ export const DentalStorage = {
       const workStartMins = timeToMinutes(wh.startTime);
       const workEndMins = timeToMinutes(wh.endTime);
 
-      // Interval step: 30 minutes
       const stepMins = 30;
 
       for (let slotTimeMins = workStartMins; slotTimeMins + duration <= workEndMins; slotTimeMins += stepMins) {
@@ -497,7 +501,7 @@ export const DentalStorage = {
       newAppointment.id,
       'create',
       performer,
-      `Booked ${service.name} with ${this.getDentistById(data.dentistId)?.name} for ${formatDateReadable(data.date)} at ${data.startTime}. Status: ${newAppointment.status}`
+      `Booked ${service.name} with ${this.getDentistById(data.dentistId)?.name} for ${formatDateReadable(data.date)} at ${data.startTime}. Fee: ₱${service.price.toLocaleString()}. Status: ${newAppointment.status}`
     );
 
     // Notifications
@@ -509,7 +513,7 @@ export const DentalStorage = {
       type: 'booking_confirmation',
       channel: 'email',
       subject: `Appointment ${newAppointment.status === 'confirmed' ? 'Confirmed' : 'Received'}: ${settings.clinicName} [Ref: ${bookingReference}]`,
-      body: `Hi ${patient.firstName}, your appointment for ${service.name} with ${dentist?.name} on ${formatDateReadable(data.date)} at ${data.startTime} has been ${newAppointment.status === 'confirmed' ? 'confirmed' : 'submitted for clinic review'}. Address: ${settings.address}, ${settings.city}. Contact: ${settings.phone}.`,
+      body: `Mabuhay ${patient.firstName}! Your appointment for ${service.name} with ${dentist?.name} on ${formatDateReadable(data.date)} at ${data.startTime} has been ${newAppointment.status === 'confirmed' ? 'confirmed' : 'submitted for clinic verification'}. Total fee: ₱${service.price.toLocaleString()}. Location: ${settings.address}, ${settings.city}. Phone: ${settings.phone}.`,
     });
 
     this.createNotification({
@@ -518,7 +522,7 @@ export const DentalStorage = {
       type: 'booking_confirmation',
       channel: 'sms',
       subject: `${settings.clinicName} Booking`,
-      body: `Orale Dental: Ref ${bookingReference}. ${service.name} on ${data.date} at ${data.startTime}. Status: ${newAppointment.status}. Questions? Call ${settings.phone}`,
+      body: `Orale Dental BGC: Ref ${bookingReference}. ${service.name} on ${data.date} at ${data.startTime}. Fee: ₱${service.price.toLocaleString()}. Status: ${newAppointment.status}. Contact: ${settings.phone}`,
     });
 
     return { success: true, appointment: newAppointment };
@@ -563,7 +567,7 @@ export const DentalStorage = {
         type: 'status_update',
         channel: 'email',
         subject: `Update on your Orale' Dental Appointment [Ref: ${apt.bookingReference}]`,
-        body: `Hello ${patient.firstName}, your booking status for ${service?.name || 'appointment'} on ${formatDateReadable(apt.date)} is now: ${status.toUpperCase().replace('_', ' ')}.`,
+        body: `Dear ${patient.firstName}, your appointment status for ${service?.name || 'procedure'} on ${formatDateReadable(apt.date)} is now: ${status.toUpperCase().replace('_', ' ')}.`,
       });
     }
 
@@ -632,7 +636,7 @@ export const DentalStorage = {
         type: 'status_update',
         channel: 'email',
         subject: `Rescheduled: Your Orale' Dental Appointment [Ref: ${apt.bookingReference}]`,
-        body: `Dear ${patient.firstName}, your appointment has been rescheduled to ${formatDateReadable(newDate)} at ${newStartTime}.`,
+        body: `Dear ${patient.firstName}, your appointment has been rescheduled to ${formatDateReadable(newDate)} at ${newStartTime} at Orale' Dental Studio BGC.`,
       });
     }
 
@@ -667,7 +671,7 @@ export const DentalStorage = {
         type: 'cancellation_notice',
         channel: 'email',
         subject: `Cancelled: Orale' Appointment [Ref: ${apt.bookingReference}]`,
-        body: `Dear ${patient.firstName}, your appointment on ${formatDateReadable(apt.date)} has been cancelled. Reason noted: ${reason}. Please visit our website if you wish to re-book.`,
+        body: `Dear ${patient.firstName}, your dental appointment on ${formatDateReadable(apt.date)} has been cancelled. Reason noted: ${reason}. Please visit our website if you wish to re-book.`,
       });
     }
 

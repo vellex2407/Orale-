@@ -93,12 +93,12 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className="hidden sm:flex items-center gap-4 text-slate-400">
             <span className="flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5 text-teal-400" />
-              <span>Today: 8:30 AM – 5:30 PM</span>
+              <span>Mon – Sat: 9:00 AM – 6:00 PM</span>
             </span>
             <span aria-hidden="true">·</span>
             <span className="flex items-center gap-1.5">
               <Phone className="w-3.5 h-3.5 text-amber-400" />
-              <span>Emergency Hotline: (555) 382-9911</span>
+              <span>Emergency Hotline: +63 917 888 9911</span>
             </span>
           </div>
         </div>

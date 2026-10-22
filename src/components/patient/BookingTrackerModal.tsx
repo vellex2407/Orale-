@@ -279,7 +279,7 @@ export const BookingTrackerModal: React.FC<BookingTrackerModalProps> = ({
                     <span className="text-slate-400 text-xs block">Service</span>
                     <span className="font-bold text-slate-900">{currentService?.name}</span>
                     <span className="text-xs text-slate-500 block font-mono">
-                      {currentService?.durationMinutes} mins · ${currentService?.price}
+                      {currentService?.durationMinutes} mins · ₱{currentService?.price.toLocaleString()}
                     </span>
                   </div>
 

@@ -51,7 +51,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 >
                   {services.map((s) => (
                     <option key={s.id} value={s.id}>
-                      {s.name} ({s.durationMinutes} min · ${s.price})
+                      {s.name} ({s.durationMinutes} min · ₱{s.price.toLocaleString()})
                     </option>
                   ))}
                 </select>
@@ -78,7 +78,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 <span aria-hidden="true">·</span>
                 <span className="flex items-center gap-1.5">
                   <CheckCircle2 className="w-3.5 h-3.5 text-teal-600" />
-                  <span>Free 24h cancellation</span>
+                  <span>HMO & PhilHealth assistance</span>
                 </span>
               </div>
             </div>
@@ -101,13 +101,13 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             <div className="relative rounded-2xl overflow-hidden border border-slate-200 shadow-md bg-slate-100">
               <img
                 src="/src/assets/images/hero_dental_clinic_1792645066086.jpg"
-                alt="Modern, calm Orale dental suite interior with floor-to-ceiling garden views"
+                alt="Modern, calm Orale dental suite interior with garden views in BGC"
                 className="w-full h-[360px] sm:h-[420px] object-cover"
                 referrerPolicy="no-referrer"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent flex flex-col justify-end p-6 text-white">
                 <div className="text-xs font-medium text-teal-300 uppercase tracking-wider mb-1">
-                  San Francisco Studio
+                  Bonifacio Global City Studio
                 </div>
                 <h3 className="text-lg font-bold text-white">
                   State-of-the-art restorative dental suite

@@ -272,7 +272,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs col-span-2 sm:col-span-1">
             <div className="text-xs font-medium text-slate-500">Estimated Revenue</div>
             <div className="text-2xl font-bold font-mono tabular-nums text-slate-900 mt-1">
-              ${estimatedRevenue.toLocaleString()}
+              ₱{estimatedRevenue.toLocaleString()}
             </div>
             <div className="text-[11px] text-slate-400 mt-0.5">Active treatment pipeline</div>
           </div>
@@ -495,7 +495,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             <td className="py-3 px-4">
                               <span className="font-semibold text-slate-900 block">{s?.name}</span>
                               <span className="text-[11px] text-slate-500 font-mono tabular-nums">
-                                ${apt.totalPrice} · {s?.durationMinutes}m
+                                ₱{apt.totalPrice?.toLocaleString()} · {s?.durationMinutes}m
                               </span>
                             </td>
 
@@ -831,7 +831,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <div>
                       <span className="text-slate-400 block text-[11px]">Fee & Duration</span>
                       <span className="font-bold text-slate-900 font-mono">
-                        ${service.price} · {service.durationMinutes}m
+                        ₱{service.price.toLocaleString()} · {service.durationMinutes}m
                       </span>
                     </div>
 

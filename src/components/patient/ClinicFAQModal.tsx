@@ -35,9 +35,9 @@ const FAQS: FAQItem[] = [
   {
     id: 'faq-3',
     category: 'pricing',
-    question: 'Which dental insurance plans do you accept?',
+    question: 'Which dental insurance & HMO plans do you accept?',
     answer:
-      'Orale accepts all major PPO insurance plans including Delta Dental, Cigna, MetLife, Guardian, and Aetna. We file claims directly on your behalf and provide a detailed estimate of out-of-pocket co-pays prior to treatment.',
+      'Orale accepts leading Philippine HMO providers including Maxicare, Intellicare, Medicard, PhilCare, and Pacific Cross, as well as international insurances (Cigna, Bupa). We also offer 0% interest credit card installment plans and accept GCash/Maya.',
   },
   {
     id: 'faq-4',
@@ -51,14 +51,14 @@ const FAQS: FAQItem[] = [
     category: 'emergencies',
     question: 'What constitutes a dental emergency and how can I be seen today?',
     answer:
-      'Severe dental throbbing, facial swelling, uncontrollable oral bleeding, or a knocked-out permanent tooth are prioritized as emergencies. Call our emergency hotline at (555) 382-9911 immediately. If a permanent tooth has been knocked out, gently place it back in the socket or in a container of cold milk and arrive within 60 minutes.',
+      'Severe dental throbbing, facial swelling, uncontrollable oral bleeding, or a knocked-out permanent tooth are prioritized as emergencies. Call our emergency hotline at +63 917 888 9911 immediately. If a permanent tooth has been knocked out, gently place it back in the socket or in a container of cold milk and arrive at our BGC studio within 60 minutes.',
   },
   {
     id: 'faq-6',
     category: 'pricing',
     question: 'Are dental consultation fees applied toward subsequent treatments?',
     answer:
-      'Yes! Clear Aligner evaluations ($95) and restorative consult fees are credited toward your completed treatment or aligner package.',
+      'Yes! Clear Aligner evaluations (₱2,500) and restorative consult fees are credited toward your completed treatment or aligner package.',
   },
 ];
 
@@ -89,18 +89,18 @@ export const ClinicFAQModal: React.FC<ClinicFAQModalProps> = ({
     if (q.includes('price') || q.includes('cost') || q.includes('fee')) {
       const priceList = services
         .slice(0, 4)
-        .map((s) => `${s.name}: $${s.price}`)
+        .map((s) => `${s.name}: ₱${s.price.toLocaleString()}`)
         .join(', ');
       setAssistantReply(
-        `At Orale', all pricing is transparent with no hidden chair fees. Sample standard fees: ${priceList}. Detailed quotes are provided after digital 3D examination.`
+        `At Orale' BGC, all pricing is transparent with no hidden chair fees. Sample standard fees: ${priceList}. Detailed quotes are provided after digital 3D examination.`
       );
-    } else if (q.includes('insurance') || q.includes('coverage') || q.includes('ppo')) {
+    } else if (q.includes('insurance') || q.includes('coverage') || q.includes('hmo') || q.includes('maxicare')) {
       setAssistantReply(
-        `We accept all standard PPO plans (Delta Dental, MetLife, Cigna, Guardian, Aetna). We submit insurance claims directly for you so you only pay your co-pay.`
+        `We accept top HMOs in the Philippines (Maxicare, Intellicare, Medicard, PhilCare, Pacific Cross). We file claims directly for accredited procedures so you only settle your co-pay.`
       );
     } else if (q.includes('emergency') || q.includes('pain') || q.includes('bleed') || q.includes('swelling')) {
       setAssistantReply(
-        `For acute dental pain or facial swelling, please call our 24/7 emergency hotline at ${settings.emergencyHotline}. Same-day triage slots are held daily.`
+        `For acute dental pain or facial swelling, please call our 24/7 emergency hotline at ${settings.emergencyHotline}. Same-day triage slots are held daily at our BGC studio.`
       );
     } else if (q.includes('cancel') || q.includes('reschedule') || q.includes('change')) {
       setAssistantReply(
@@ -108,7 +108,7 @@ export const ClinicFAQModal: React.FC<ClinicFAQModalProps> = ({
       );
     } else if (q.includes('whitening') || q.includes('zoom')) {
       setAssistantReply(
-        `Our Philips Zoom! In-Chair Whitening is a 60-minute session ($395) lifting teeth up to 8 shades. Avoid colored drinks (coffee, wine) for 48 hours post-visit.`
+        `Our Philips Zoom! In-Chair Whitening is a 60-minute session (₱14,500) lifting teeth up to 8 shades. Avoid colored drinks (coffee, soy sauce) for 48 hours post-visit.`
       );
     } else {
       setAssistantReply(

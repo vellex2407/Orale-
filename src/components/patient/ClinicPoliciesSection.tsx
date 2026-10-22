@@ -63,7 +63,7 @@ export const ClinicPoliciesSection: React.FC<ClinicPoliciesSectionProps> = ({ se
             </div>
             <h3 className="text-base font-bold text-slate-900 mb-2">Direct Insurance & Estimates</h3>
             <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-              We process claims with major PPO dental networks (Delta Dental, Cigna, MetLife, Guardian). Detailed treatment estimates and patient co-pay amounts are provided prior to starting any non-emergency treatment.
+              We process claims with major Philippine HMO and dental insurance networks (Maxicare, Intellicare, Medicard, PhilCare, Pacific Cross, Cigna) as well as 0% credit card and Maya/GCash installments. Detailed estimates are provided before starting any procedure.
             </p>
           </div>
 

@@ -299,7 +299,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                         </div>
                         <div className="text-right shrink-0">
                           <span className="text-base font-bold font-mono tabular-nums text-slate-900">
-                            ${service.price}
+                            ₱{service.price.toLocaleString()}
                           </span>
                         </div>
                       </div>
@@ -519,11 +519,11 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">Phone Number (for SMS confirmation) *</label>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">Mobile Number (for SMS confirmation) *</label>
                   <input
                     type="tel"
                     required
-                    placeholder="+1 (555) 000-0000"
+                    placeholder="+63 917 000 0000"
                     value={patientInfo.phone}
                     onChange={(e) => setPatientInfo({ ...patientInfo, phone: e.target.value })}
                     className="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2 text-sm text-slate-900 focus:ring-2 focus:ring-teal-500 focus:outline-hidden"
@@ -541,18 +541,21 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">Dental Insurance / Payment Method</label>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">HMO Dental Insurance / Payment Method</label>
                   <select
                     value={patientInfo.insuranceProvider}
                     onChange={(e) => setPatientInfo({ ...patientInfo, insuranceProvider: e.target.value })}
                     className="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2 text-sm text-slate-900 focus:ring-2 focus:ring-teal-500 focus:outline-hidden"
                   >
-                    <option value="Self-Pay / Private">Self-Pay / Private</option>
-                    <option value="Delta Dental PPO">Delta Dental PPO</option>
-                    <option value="Cigna Dental">Cigna Dental</option>
-                    <option value="MetLife Dental">MetLife Dental</option>
-                    <option value="Guardian Dental">Guardian Dental</option>
-                    <option value="Aetna Dental">Aetna Dental</option>
+                    <option value="Self-Pay / Cash">Self-Pay / Cash</option>
+                    <option value="GCash / Maya">GCash / Maya</option>
+                    <option value="Credit Card (0% Installment)">Credit Card (0% Installment)</option>
+                    <option value="Maxicare Plus / Platinum">Maxicare Plus / Platinum</option>
+                    <option value="Intellicare HMO">Intellicare HMO</option>
+                    <option value="Medicard Philippines">Medicard Philippines</option>
+                    <option value="PhilCare Dental">PhilCare Dental</option>
+                    <option value="Pacific Cross Dental">Pacific Cross Dental</option>
+                    <option value="Cigna Global">Cigna Global</option>
                   </select>
                 </div>
               </div>
@@ -605,7 +608,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                     Booking Summary
                   </span>
                   <span className="text-sm font-bold font-mono tabular-nums text-slate-900">
-                    Est. ${currentService?.price}
+                    Est. ₱{currentService?.price?.toLocaleString()}
                   </span>
                 </div>
 
