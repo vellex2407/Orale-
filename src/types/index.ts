@@ -26,7 +26,14 @@ export interface Patient {
   createdAt: string;
 }
 
-export type ServiceCategory = 'preventive' | 'restorative' | 'cosmetic' | 'orthodontics' | 'surgery';
+export type ServiceCategory =
+  | 'cleaning_prevention'
+  | 'tooth_repair'
+  | 'extraction_surgery'
+  | 'braces_alignment'
+  | 'dentures_replacement'
+  | 'cosmetic'
+  | 'consultation';
 
 export interface DentalService {
   id: string;
@@ -35,7 +42,11 @@ export interface DentalService {
   description: string;
   durationMinutes: number; // e.g. 45
   bufferMinutes: number; // e.g. 15 for sterilization
-  price: number;
+  price: number; // Base starting price in PHP
+  priceRange: string; // e.g. "₱500 – ₱1,500"
+  priceNote?: string; // e.g. "Final price depends on dentist assessment & case complexity"
+  appointmentType?: string; // e.g. "In-clinic procedure" or "Assessment first"
+  requiresConsultationFirst?: boolean; // For braces, implants, root canals
   preparationNotes: string;
   active: boolean;
 }

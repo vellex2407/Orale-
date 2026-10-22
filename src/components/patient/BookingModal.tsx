@@ -285,7 +285,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                         <div>
                           <div className="flex items-center gap-2 text-xs text-slate-500 mb-1">
                             <span className="font-semibold uppercase tracking-wider text-teal-700">
-                              {service.category}
+                              {service.category.replace('_', ' ')}
                             </span>
                             <span aria-hidden="true">·</span>
                             <span className="font-mono tabular-nums">{service.durationMinutes} mins</span>
@@ -296,10 +296,18 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                           <p className="text-xs text-slate-600 mt-1 line-clamp-2">
                             {service.description}
                           </p>
+                          {service.requiresConsultationFirst && (
+                            <span className="inline-block mt-1 text-[11px] text-teal-800 font-medium bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
+                              Assessment & planning visit required first
+                            </span>
+                          )}
                         </div>
                         <div className="text-right shrink-0">
-                          <span className="text-base font-bold font-mono tabular-nums text-slate-900">
-                            ₱{service.price.toLocaleString()}
+                          <span className="text-sm font-bold font-mono tabular-nums text-slate-900 block">
+                            {service.priceRange || `₱${service.price.toLocaleString()}`}
+                          </span>
+                          <span className="text-[11px] text-slate-500 font-mono block">
+                            Starts at ₱{service.price.toLocaleString()}
                           </span>
                         </div>
                       </div>
@@ -607,9 +615,14 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                   <span className="text-xs font-semibold uppercase tracking-wider text-teal-700">
                     Booking Summary
                   </span>
-                  <span className="text-sm font-bold font-mono tabular-nums text-slate-900">
-                    Est. ₱{currentService?.price?.toLocaleString()}
-                  </span>
+                  <div className="text-right">
+                    <span className="text-sm font-bold font-mono tabular-nums text-slate-900 block">
+                      {currentService?.priceRange || `₱${currentService?.price?.toLocaleString()}`}
+                    </span>
+                    <span className="text-[11px] text-slate-500 font-mono block">
+                      Starts at ₱{currentService?.price?.toLocaleString()}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs sm:text-sm">

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { DentalService, ServiceCategory } from '../../types';
-import { Clock, Shield, Sparkles, ArrowRight, Info } from 'lucide-react';
+import { Clock, ArrowRight, Info, AlertCircle, Sparkles, CheckCircle2 } from 'lucide-react';
 
 interface ServicesSectionProps {
   services: DentalService[];
@@ -9,12 +9,24 @@ interface ServicesSectionProps {
 
 const CATEGORY_TABS: { label: string; value: ServiceCategory | 'all' }[] = [
   { label: 'All Treatments', value: 'all' },
-  { label: 'Preventive & Hygiene', value: 'preventive' },
-  { label: 'Restorative Care', value: 'restorative' },
-  { label: 'Cosmetic & Whitening', value: 'cosmetic' },
-  { label: 'Orthodontics & Aligners', value: 'orthodontics' },
-  { label: 'Oral Surgery', value: 'surgery' },
+  { label: 'Cleaning & Prevention', value: 'cleaning_prevention' },
+  { label: 'Tooth Repair & Pain Relief', value: 'tooth_repair' },
+  { label: 'Extraction & Oral Surgery', value: 'extraction_surgery' },
+  { label: 'Braces & Alignment', value: 'braces_alignment' },
+  { label: 'Dentures & Replacement', value: 'dentures_replacement' },
+  { label: 'Cosmetic Dentistry', value: 'cosmetic' },
+  { label: 'Consultation & Diagnostics', value: 'consultation' },
 ];
+
+const CATEGORY_DISPLAY_NAMES: Record<ServiceCategory, string> = {
+  cleaning_prevention: 'Cleaning & Prevention',
+  tooth_repair: 'Tooth Repair & Pain Relief',
+  extraction_surgery: 'Extraction & Oral Surgery',
+  braces_alignment: 'Braces & Alignment',
+  dentures_replacement: 'Dentures & Tooth Replacement',
+  cosmetic: 'Cosmetic Dentistry',
+  consultation: 'Consultation & Diagnostics',
+};
 
 export const ServicesSection: React.FC<ServicesSectionProps> = ({
   services,
@@ -32,20 +44,20 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
     <section id="services-section" className="py-16 md:py-24 bg-slate-50 border-b border-slate-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         {/* Section Header */}
-        <div className="max-w-3xl mb-10">
-          <div className="text-xs font-semibold uppercase tracking-wider text-teal-700 mb-2">
-            Clinical Catalog
+        <div className="max-w-3xl mb-8">
+          <div className="text-xs font-semibold uppercase tracking-wider text-teal-800 mb-2">
+            Clinical Treatment Menu
           </div>
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
-            Evidence-based dental care with upfront pricing
+            Comprehensive Dental Care with Transparent Philippine Peso Pricing
           </h2>
           <p className="text-slate-600 text-sm sm:text-base mt-2">
-            Every procedure includes digital diagnostic scans, individualized treatment plans, and post-appointment follow-up instructions.
+            Organized by patient concern. Indicative price ranges reflect 2026 private dental clinic rates in Metro Manila. Final fees depend on case complexity and clinical assessment.
           </p>
         </div>
 
         {/* Interactive Filter Control (Buttons/Segmented Bar) */}
-        <div className="flex flex-wrap items-center gap-2 mb-10 p-1.5 bg-slate-200/60 rounded-xl max-w-fit">
+        <div className="flex flex-wrap items-center gap-1.5 mb-10 p-1.5 bg-slate-200/70 rounded-xl">
           {CATEGORY_TABS.map((tab) => {
             const isActive = activeCategory === tab.value;
             return (
@@ -53,7 +65,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
                 key={tab.value}
                 type="button"
                 onClick={() => setActiveCategory(tab.value)}
-                className={`px-3.5 py-1.5 text-xs sm:text-sm font-medium rounded-lg transition-all whitespace-nowrap ${
+                className={`px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg transition-all whitespace-nowrap ${
                   isActive
                     ? 'bg-white text-slate-900 shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
@@ -70,35 +82,54 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
           {filteredServices.map((service) => (
             <div
               key={service.id}
-              className="bg-white rounded-xl border border-slate-200/80 p-6 flex flex-col justify-between hover:border-teal-300 hover:shadow-xs transition-all"
+              className="bg-white rounded-xl border border-slate-200/90 p-6 flex flex-col justify-between hover:border-teal-400 hover:shadow-xs transition-all"
             >
               <div>
                 {/* Unboxed Metadata (Zero-pill discipline) */}
-                <div className="flex items-center gap-2 text-xs text-slate-500 mb-2">
-                  <span className="font-semibold text-teal-700 uppercase tracking-wider">
-                    {service.category}
+                <div className="flex items-center justify-between gap-2 text-xs text-slate-500 mb-2.5">
+                  <span className="font-semibold text-teal-800 text-[11px] uppercase tracking-wider">
+                    {CATEGORY_DISPLAY_NAMES[service.category]}
                   </span>
-                  <span aria-hidden="true">·</span>
-                  <span className="flex items-center gap-1 font-mono tabular-nums">
+                  <span className="flex items-center gap-1 font-mono tabular-nums text-slate-500 text-xs">
                     <Clock className="w-3.5 h-3.5 text-slate-400" />
                     <span>{service.durationMinutes} min</span>
                   </span>
                 </div>
 
-                <h3 className="text-lg font-bold text-slate-900 mb-2 leading-snug">
+                <h3 className="text-base sm:text-lg font-bold text-slate-900 mb-2 leading-snug">
                   {service.name}
                 </h3>
 
-                <p className="text-sm text-slate-600 leading-relaxed mb-4">
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mb-4">
                   {service.description}
                 </p>
+
+                {/* Consultation Notice if multi-stage or assessment required */}
+                {service.requiresConsultationFirst && (
+                  <div className="rounded-lg bg-teal-50/70 p-2.5 border border-teal-200/80 text-xs text-teal-900 mb-3.5">
+                    <div className="flex items-start gap-2">
+                      <Sparkles className="w-3.5 h-3.5 text-teal-700 shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-semibold text-teal-950">Assessment first: </span>
+                        <span>Requires comprehensive diagnostic exam/X-ray prior to procedure installation.</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Price Note / Breakdown */}
+                {service.priceNote && (
+                  <p className="text-xs text-slate-500 mb-4 italic">
+                    Note: {service.priceNote}
+                  </p>
+                )}
 
                 {/* Preparation Guide Snippet */}
                 <div className="rounded-lg bg-slate-50 p-3 border border-slate-100 text-xs text-slate-600 mb-5">
                   <div className="flex items-start gap-2">
-                    <Info className="w-3.5 h-3.5 text-teal-600 shrink-0 mt-0.5" />
+                    <Info className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
                     <div>
-                      <span className="font-semibold text-slate-700">Pre-visit note: </span>
+                      <span className="font-semibold text-slate-700">Pre-visit tip: </span>
                       <span>{service.preparationNotes}</span>
                     </div>
                   </div>
@@ -106,20 +137,23 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
               </div>
 
               {/* Price & Action */}
-              <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-4">
+              <div className="pt-4 border-t border-slate-100 flex items-end justify-between gap-3">
                 <div>
-                  <div className="text-[11px] text-slate-400 uppercase font-medium">Indicative fee</div>
-                  <div className="text-xl font-bold font-mono tabular-nums text-slate-900">
-                    ₱{service.price.toLocaleString()}
+                  <div className="text-[11px] text-slate-400 font-medium">Estimated range</div>
+                  <div className="text-base sm:text-lg font-bold font-mono tabular-nums text-slate-900 leading-tight">
+                    {service.priceRange || `₱${service.price.toLocaleString()}`}
+                  </div>
+                  <div className="text-[11px] text-teal-700 font-mono mt-0.5">
+                    Starts at ₱{service.price.toLocaleString()}
                   </div>
                 </div>
 
                 <button
                   type="button"
                   onClick={() => onSelectService(service.id)}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 hover:bg-teal-700 text-white text-xs font-semibold rounded-lg transition-colors shadow-2xs whitespace-nowrap"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-900 hover:bg-teal-700 text-white text-xs font-semibold rounded-lg transition-colors shadow-2xs whitespace-nowrap"
                 >
-                  <span>Select & Book</span>
+                  <span>Book Slot</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>

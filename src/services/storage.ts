@@ -21,17 +21,17 @@ import {
   INITIAL_NOTIFICATIONS,
 } from '../data/seedData';
 
-// Storage keys bumped to v2 for Philippine Peso and Filipino clinical staff migration
+// Storage keys bumped to v3 for Philippine dental treatment menu and price ranges
 const STORAGE_KEYS = {
-  SERVICES: 'orale_services_v2_ph',
-  DENTISTS: 'orale_dentists_v2_ph',
-  WORKING_HOURS: 'orale_working_hours_v2_ph',
-  TIME_OFF: 'orale_time_off_v2_ph',
-  PATIENTS: 'orale_patients_v2_ph',
-  APPOINTMENTS: 'orale_appointments_v2_ph',
-  NOTIFICATIONS: 'orale_notifications_v2_ph',
-  AUDIT_LOGS: 'orale_audit_logs_v2_ph',
-  SETTINGS: 'orale_settings_v2_ph',
+  SERVICES: 'orale_services_v3_ph_menu',
+  DENTISTS: 'orale_dentists_v3_ph_menu',
+  WORKING_HOURS: 'orale_working_hours_v3_ph_menu',
+  TIME_OFF: 'orale_time_off_v3_ph_menu',
+  PATIENTS: 'orale_patients_v3_ph_menu',
+  APPOINTMENTS: 'orale_appointments_v3_ph_menu',
+  NOTIFICATIONS: 'orale_notifications_v3_ph_menu',
+  AUDIT_LOGS: 'orale_audit_logs_v3_ph_menu',
+  SETTINGS: 'orale_settings_v3_ph_menu',
 };
 
 // Format currency in Philippine Peso

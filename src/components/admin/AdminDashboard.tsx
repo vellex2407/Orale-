@@ -817,7 +817,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <div key={service.id} className="bg-white rounded-xl border border-slate-200 p-5 space-y-3 shadow-2xs">
                   <div className="flex items-center justify-between">
                     <span className="text-xs uppercase font-bold text-teal-700 tracking-wider">
-                      {service.category}
+                      {service.category.replace('_', ' ')}
                     </span>
                     <span className="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
                       Active
@@ -826,12 +826,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                   <h4 className="text-sm font-bold text-slate-900">{service.name}</h4>
                   <p className="text-xs text-slate-600 line-clamp-2">{service.description}</p>
+                  {service.priceNote && (
+                    <p className="text-[11px] text-slate-500 italic">{service.priceNote}</p>
+                  )}
 
                   <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
                     <div>
-                      <span className="text-slate-400 block text-[11px]">Fee & Duration</span>
+                      <span className="text-slate-400 block text-[11px]">Fee Range</span>
                       <span className="font-bold text-slate-900 font-mono">
-                        ₱{service.price.toLocaleString()} · {service.durationMinutes}m
+                        {service.priceRange || `₱${service.price.toLocaleString()}`}
+                      </span>
+                      <span className="text-[10px] text-slate-400 block font-mono">
+                        Starts: ₱{service.price.toLocaleString()} · {service.durationMinutes}m
                       </span>
                     </div>
 

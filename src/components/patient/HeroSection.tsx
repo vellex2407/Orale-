@@ -51,7 +51,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 >
                   {services.map((s) => (
                     <option key={s.id} value={s.id}>
-                      {s.name} ({s.durationMinutes} min · ₱{s.price.toLocaleString()})
+                      {s.name} ({s.durationMinutes} min · {s.priceRange || `₱${s.price.toLocaleString()}`})
                     </option>
                   ))}
                 </select>
