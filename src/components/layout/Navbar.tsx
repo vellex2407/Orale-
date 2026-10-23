@@ -98,7 +98,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span aria-hidden="true">·</span>
             <span className="flex items-center gap-1.5">
               <Phone className="w-3.5 h-3.5 text-amber-400" />
-              <span>Emergency Hotline: +63 917 888 9911</span>
+              <span>Emergency Hotline: 0917-888-9911</span>
             </span>
           </div>
         </div>

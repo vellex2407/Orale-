@@ -303,11 +303,11 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                           )}
                         </div>
                         <div className="text-right shrink-0">
+                          <span className="text-[11px] text-teal-800 font-semibold uppercase tracking-wider block">
+                            Fixed Fee
+                          </span>
                           <span className="text-sm font-bold font-mono tabular-nums text-slate-900 block">
                             {service.priceRange || `₱${service.price.toLocaleString()}`}
-                          </span>
-                          <span className="text-[11px] text-slate-500 font-mono block">
-                            Starts at ₱{service.price.toLocaleString()}
                           </span>
                         </div>
                       </div>
@@ -527,11 +527,11 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">Mobile Number (for SMS confirmation) *</label>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">Mobile Number (09xx-xxx-xxxx) *</label>
                   <input
                     type="tel"
                     required
-                    placeholder="+63 917 000 0000"
+                    placeholder="0917-xxx-xxxx"
                     value={patientInfo.phone}
                     onChange={(e) => setPatientInfo({ ...patientInfo, phone: e.target.value })}
                     className="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2 text-sm text-slate-900 focus:ring-2 focus:ring-teal-500 focus:outline-hidden"
@@ -616,11 +616,11 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                     Booking Summary
                   </span>
                   <div className="text-right">
-                    <span className="text-sm font-bold font-mono tabular-nums text-slate-900 block">
-                      {currentService?.priceRange || `₱${currentService?.price?.toLocaleString()}`}
+                    <span className="text-[11px] text-teal-800 font-semibold uppercase tracking-wider block">
+                      Fixed Standard Fee
                     </span>
-                    <span className="text-[11px] text-slate-500 font-mono block">
-                      Starts at ₱{currentService?.price?.toLocaleString()}
+                    <span className="text-base font-bold font-mono tabular-nums text-slate-900 block">
+                      {currentService?.priceRange || `₱${currentService?.price?.toLocaleString()}`}
                     </span>
                   </div>
                 </div>

@@ -20,12 +20,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   return (
     <section className="relative overflow-hidden bg-white border-b border-slate-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 md:py-20">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
           {/* Left Editorial Copy */}
-          <div className="lg:col-span-7 space-y-6">
+          <div className="space-y-6 min-w-0">
             <div className="inline-flex items-center gap-2 text-xs font-semibold text-teal-700 bg-teal-50 px-3 py-1.5 rounded-md border border-teal-200/60">
               <ShieldCheck className="w-4 h-4 text-teal-600" />
-              <span>Modern, Calm & Transparent Dental Care</span>
+              <span>Modern, Calm & Transparent Dental Care in Candaba, Pampanga</span>
             </div>
 
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-slate-900 leading-[1.15]" style={{ textWrap: 'balance' }}>
@@ -33,7 +33,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             </h1>
 
             <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl">
-              Experience stress-free oral healthcare with real-time slot booking, zero surprise bills, and hospital-grade sterilization suites led by specialist clinicians.
+              Experience stress-free oral healthcare in Candaba with real-time slot booking, zero surprise bills, fixed transparent rates, and hospital-grade sterilization suites.
             </p>
 
             {/* Quick Service Booking Widget */}
@@ -51,7 +51,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 >
                   {services.map((s) => (
                     <option key={s.id} value={s.id}>
-                      {s.name} ({s.durationMinutes} min · {s.priceRange || `₱${s.price.toLocaleString()}`})
+                      {s.name} ({s.durationMinutes} min · ₱{s.price.toLocaleString()})
                     </option>
                   ))}
                 </select>
@@ -97,17 +97,17 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           </div>
 
           {/* Right Hero Image Card */}
-          <div className="lg:col-span-5">
-            <div className="relative rounded-2xl overflow-hidden border border-slate-200 shadow-md bg-slate-100">
+          <div className="w-full min-w-0">
+            <div className="relative w-full h-[360px] sm:h-[420px] lg:h-[460px] rounded-2xl overflow-hidden border border-slate-200 shadow-md bg-slate-100 isolate">
               <img
                 src="/src/assets/images/hero_dental_clinic_1792645066086.jpg"
-                alt="Modern, calm Orale dental suite interior with garden views in BGC"
-                className="w-full h-[360px] sm:h-[420px] object-cover"
+                alt="Modern, calm Orale dental suite interior in Candaba, Pampanga"
+                className="w-full h-full object-cover object-center block"
                 referrerPolicy="no-referrer"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent flex flex-col justify-end p-6 text-white">
-                <div className="text-xs font-medium text-teal-300 uppercase tracking-wider mb-1">
-                  Bonifacio Global City Studio
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-transparent flex flex-col justify-end p-6 text-white pointer-events-none">
+                <div className="text-xs font-semibold text-teal-300 uppercase tracking-wider mb-1">
+                  Candaba, Pampanga Studio
                 </div>
                 <h3 className="text-lg font-bold text-white">
                   State-of-the-art restorative dental suite

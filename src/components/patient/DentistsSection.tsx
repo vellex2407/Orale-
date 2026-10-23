@@ -37,22 +37,22 @@ export const DentistsSection: React.FC<DentistsSectionProps> = ({
             return (
               <div
                 key={dentist.id}
-                className="rounded-xl border border-slate-200 bg-white overflow-hidden flex flex-col justify-between hover:border-slate-300 transition-all shadow-xs"
+                className="rounded-xl border border-slate-200 bg-white overflow-hidden flex flex-col justify-between hover:border-slate-300 transition-all shadow-xs min-w-0"
               >
                 <div>
-                  <div className="relative h-64 bg-slate-100 overflow-hidden">
+                  <div className="relative h-72 bg-slate-100 overflow-hidden isolate">
                     <img
                       src={dentist.avatarUrl}
                       alt={dentist.name}
-                      className="w-full h-full object-cover object-top"
+                      className="w-full h-full object-cover object-top block"
                       referrerPolicy="no-referrer"
                     />
-                    <div className="absolute top-3 left-3 bg-slate-900/80 backdrop-blur-xs text-white text-[11px] font-medium px-2.5 py-1 rounded-md">
-                      {dentist.specialty}
-                    </div>
                   </div>
 
                   <div className="p-6">
+                    <div className="inline-block text-[11px] font-semibold text-teal-800 bg-teal-50 border border-teal-200/80 px-2.5 py-0.5 rounded-md mb-2.5">
+                      {dentist.specialty}
+                    </div>
                     <h3 className="text-lg font-bold text-slate-900">{dentist.name}</h3>
                     <p className="text-xs text-teal-700 font-medium mt-0.5 mb-3">{dentist.title}</p>
                     <p className="text-sm text-slate-600 leading-relaxed mb-5">{dentist.bio}</p>

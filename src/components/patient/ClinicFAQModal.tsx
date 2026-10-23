@@ -51,7 +51,7 @@ const FAQS: FAQItem[] = [
     category: 'emergencies',
     question: 'What constitutes a dental emergency and how can I be seen today?',
     answer:
-      'Severe dental throbbing, facial swelling, uncontrollable oral bleeding, or a knocked-out permanent tooth are prioritized as emergencies. Call our emergency hotline at +63 917 888 9911 immediately. If a permanent tooth has been knocked out, gently place it back in the socket or in a container of cold milk and arrive at our BGC studio within 60 minutes.',
+      'Severe dental throbbing, facial swelling, uncontrollable oral bleeding, or a knocked-out permanent tooth are prioritized as emergencies. Call our emergency hotline at 0917-888-9911 immediately. If a permanent tooth has been knocked out, gently place it back in the socket or in a container of cold milk and arrive at our Candaba studio within 60 minutes.',
   },
   {
     id: 'faq-6',
@@ -86,13 +86,9 @@ export const ClinicFAQModal: React.FC<ClinicFAQModalProps> = ({
     const q = customQuestion.trim().toLowerCase();
     if (!q) return;
 
-    if (q.includes('price') || q.includes('cost') || q.includes('fee')) {
-      const priceList = services
-        .slice(0, 4)
-        .map((s) => `${s.name}: ₱${s.price.toLocaleString()}`)
-        .join(', ');
+    if (q.includes('price') || q.includes('cost') || q.includes('fee') || q.includes('bunot') || q.includes('extraction')) {
       setAssistantReply(
-        `At Orale' BGC, all pricing is transparent with no hidden chair fees. Sample standard fees: ${priceList}. Detailed quotes are provided after digital 3D examination.`
+        `At Orale' Candaba, all pricing is fixed and transparent with zero hidden fees: Simple Tooth Extraction (Bunot) is fixed at ₱1,000 per tooth. Oral Prophylaxis (Cleaning) is ₱1,000, and Tooth Filling (Pasta) is ₱1,000 per tooth.`
       );
     } else if (q.includes('insurance') || q.includes('coverage') || q.includes('hmo') || q.includes('maxicare')) {
       setAssistantReply(
@@ -100,7 +96,7 @@ export const ClinicFAQModal: React.FC<ClinicFAQModalProps> = ({
       );
     } else if (q.includes('emergency') || q.includes('pain') || q.includes('bleed') || q.includes('swelling')) {
       setAssistantReply(
-        `For acute dental pain or facial swelling, please call our 24/7 emergency hotline at ${settings.emergencyHotline}. Same-day triage slots are held daily at our BGC studio.`
+        `For acute dental pain or facial swelling, please call our 24/7 emergency hotline at ${settings.emergencyHotline}. Same-day triage slots are held daily at our Candaba studio.`
       );
     } else if (q.includes('cancel') || q.includes('reschedule') || q.includes('change')) {
       setAssistantReply(
@@ -108,11 +104,11 @@ export const ClinicFAQModal: React.FC<ClinicFAQModalProps> = ({
       );
     } else if (q.includes('whitening') || q.includes('zoom')) {
       setAssistantReply(
-        `Our Philips Zoom! In-Chair Whitening is a 60-minute session (₱14,500) lifting teeth up to 8 shades. Avoid colored drinks (coffee, soy sauce) for 48 hours post-visit.`
+        `Our Philips Zoom! In-Chair Whitening is a 60-minute session (₱12,000) lifting teeth up to 8 shades. Avoid colored drinks (coffee, soy sauce) for 48 hours post-visit.`
       );
     } else {
       setAssistantReply(
-        `Orale' Dental Studio is open ${settings.operatingHoursSummary}. Location: ${settings.address}, ${settings.city}. Contact: ${settings.phone}. For custom clinical inquiries, you can book an initial consultation or call our front desk.`
+        `Orale' Dental Studio is open ${settings.operatingHoursSummary}. Location: ${settings.address}, ${settings.city}. Contact: ${settings.phone}. For custom clinical inquiries, you can book an appointment online or call our front desk.`
       );
     }
   };

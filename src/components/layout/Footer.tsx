@@ -184,7 +184,7 @@ export const Footer: React.FC<FooterProps> = ({
 
         {/* Quiet Bottom Copyright */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
-          <p>© {new Date().getFullYear()} Orale' Dental Studio BGC. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Orale' Dental Studio Candaba, Pampanga. All rights reserved.</p>
           <div className="flex items-center gap-6">
             <span>PRC Licensed Practitioners</span>
             <span aria-hidden="true">·</span>

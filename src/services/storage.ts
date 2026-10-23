@@ -21,17 +21,17 @@ import {
   INITIAL_NOTIFICATIONS,
 } from '../data/seedData';
 
-// Storage keys bumped to v3 for Philippine dental treatment menu and price ranges
+// Storage keys bumped to v4 for Candaba Pampanga location, 09xx mobile format, and fixed flat pricing
 const STORAGE_KEYS = {
-  SERVICES: 'orale_services_v3_ph_menu',
-  DENTISTS: 'orale_dentists_v3_ph_menu',
-  WORKING_HOURS: 'orale_working_hours_v3_ph_menu',
-  TIME_OFF: 'orale_time_off_v3_ph_menu',
-  PATIENTS: 'orale_patients_v3_ph_menu',
-  APPOINTMENTS: 'orale_appointments_v3_ph_menu',
-  NOTIFICATIONS: 'orale_notifications_v3_ph_menu',
-  AUDIT_LOGS: 'orale_audit_logs_v3_ph_menu',
-  SETTINGS: 'orale_settings_v3_ph_menu',
+  SERVICES: 'orale_services_v4_candaba_fixed',
+  DENTISTS: 'orale_dentists_v4_candaba_fixed',
+  WORKING_HOURS: 'orale_working_hours_v4_candaba_fixed',
+  TIME_OFF: 'orale_time_off_v4_candaba_fixed',
+  PATIENTS: 'orale_patients_v4_candaba_fixed',
+  APPOINTMENTS: 'orale_appointments_v4_candaba_fixed',
+  NOTIFICATIONS: 'orale_notifications_v4_candaba_fixed',
+  AUDIT_LOGS: 'orale_audit_logs_v4_candaba_fixed',
+  SETTINGS: 'orale_settings_v4_candaba_fixed',
 };
 
 // Format currency in Philippine Peso

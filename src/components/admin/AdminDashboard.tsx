@@ -832,12 +832,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                   <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
                     <div>
-                      <span className="text-slate-400 block text-[11px]">Fee Range</span>
+                      <span className="text-teal-800 font-semibold block text-[11px] uppercase tracking-wider">Fixed Fee</span>
                       <span className="font-bold text-slate-900 font-mono">
                         {service.priceRange || `₱${service.price.toLocaleString()}`}
                       </span>
-                      <span className="text-[10px] text-slate-400 block font-mono">
-                        Starts: ₱{service.price.toLocaleString()} · {service.durationMinutes}m
+                      <span className="text-[10px] text-slate-500 block font-mono">
+                        Duration: {service.durationMinutes} mins
                       </span>
                     </div>
 
@@ -1065,10 +1065,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
 
                 <div>
-                  <label className="text-slate-700 font-semibold block mb-1">Phone Number *</label>
+                  <label className="text-slate-700 font-semibold block mb-1">Phone Number (09xx-xxx-xxxx) *</label>
                   <input
                     type="tel"
-                    placeholder="+1 (555) 000-0000"
+                    placeholder="0917-xxx-xxxx"
                     value={walkInPhone}
                     onChange={(e) => setWalkInPhone(e.target.value)}
                     className="w-full bg-white border border-slate-300 rounded px-3 py-2"

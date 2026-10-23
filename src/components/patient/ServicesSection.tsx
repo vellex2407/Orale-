@@ -46,13 +46,13 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
         {/* Section Header */}
         <div className="max-w-3xl mb-8">
           <div className="text-xs font-semibold uppercase tracking-wider text-teal-800 mb-2">
-            Clinical Treatment Menu
+            Clinical Treatment Menu · Candaba, Pampanga
           </div>
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
-            Comprehensive Dental Care with Transparent Philippine Peso Pricing
+            Comprehensive Dental Care with Fixed, Transparent Pricing
           </h2>
           <p className="text-slate-600 text-sm sm:text-base mt-2">
-            Organized by patient concern. Indicative price ranges reflect 2026 private dental clinic rates in Metro Manila. Final fees depend on case complexity and clinical assessment.
+            Organized by treatment category. All rates are fixed flat fees clearly stated in Philippine Pesos (₱) for Candaba and neighboring Pampanga communities with zero surprise add-ons.
           </p>
         </div>
 
@@ -139,12 +139,9 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
               {/* Price & Action */}
               <div className="pt-4 border-t border-slate-100 flex items-end justify-between gap-3">
                 <div>
-                  <div className="text-[11px] text-slate-400 font-medium">Estimated range</div>
+                  <div className="text-[11px] text-teal-800 font-semibold uppercase tracking-wider">Fixed Fee</div>
                   <div className="text-base sm:text-lg font-bold font-mono tabular-nums text-slate-900 leading-tight">
                     {service.priceRange || `₱${service.price.toLocaleString()}`}
-                  </div>
-                  <div className="text-[11px] text-teal-700 font-mono mt-0.5">
-                    Starts at ₱{service.price.toLocaleString()}
                   </div>
                 </div>
 
