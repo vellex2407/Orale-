@@ -1,6 +1,7 @@
 import React from 'react';
 import { Calendar, Shield, Stethoscope, Search, User, Clock, Phone } from 'lucide-react';
 import { UserRole } from '../../types';
+import { useState } from 'react';
 
 interface NavbarProps {
   currentRole: UserRole;
@@ -23,90 +24,15 @@ export const Navbar: React.FC<NavbarProps> = ({
   activeView,
   setActiveView,
 }) => {
+  const [isViewMenuOpen, setIsViewMenuOpen] = useState(false);
+
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200">
-      {/* Stakeholder Perspective Bar (Allows seamless testing of Patient, Admin, and Dentist roles) */}
-      <div className="bg-slate-900 text-slate-300 text-xs py-1.5 px-4 sm:px-6">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <span className="text-slate-400">Viewing mode:</span>
-            <div className="inline-flex rounded-md p-0.5 bg-slate-800 border border-slate-700">
-              <button
-                type="button"
-                onClick={() => {
-                  onRoleChange('patient');
-                  setActiveView('home');
-                }}
-                className={`px-2.5 py-1 rounded text-xs font-medium transition-colors whitespace-nowrap ${
-                  currentRole === 'patient' && activeView !== 'portal'
-                    ? 'bg-teal-600 text-white shadow-xs'
-                    : 'text-slate-300 hover:text-white'
-                }`}
-              >
-                Patient Site
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  onRoleChange('patient');
-                  setActiveView('portal');
-                }}
-                className={`px-2.5 py-1 rounded text-xs font-medium transition-colors whitespace-nowrap ${
-                  activeView === 'portal'
-                    ? 'bg-teal-600 text-white shadow-xs'
-                    : 'text-slate-300 hover:text-white'
-                }`}
-              >
-                Patient Portal
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  onRoleChange('admin');
-                  setActiveView('admin');
-                }}
-                className={`px-2.5 py-1 rounded text-xs font-medium transition-colors whitespace-nowrap ${
-                  currentRole === 'admin'
-                    ? 'bg-teal-600 text-white shadow-xs'
-                    : 'text-slate-300 hover:text-white'
-                }`}
-              >
-                Admin Dashboard
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  onRoleChange('dentist');
-                  setActiveView('dentist');
-                }}
-                className={`px-2.5 py-1 rounded text-xs font-medium transition-colors whitespace-nowrap ${
-                  currentRole === 'dentist'
-                    ? 'bg-teal-600 text-white shadow-xs'
-                    : 'text-slate-300 hover:text-white'
-                }`}
-              >
-                Dentist Schedule
-              </button>
-            </div>
-          </div>
-
-          <div className="hidden sm:flex items-center gap-4 text-slate-400">
-            <span className="flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-teal-400" />
-              <span>Mon – Sat: 9:00 AM – 6:00 PM</span>
-            </span>
-            <span aria-hidden="true">·</span>
-            <span className="flex items-center gap-1.5">
-              <Phone className="w-3.5 h-3.5 text-amber-400" />
-              <span>Emergency Hotline: 0917-888-9911</span>
-            </span>
-          </div>
-        </div>
-      </div>
+      
 
       {/* Top Bar Contract (Strict 3 Zones separated by gap-8) */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        <div className="flex items-center justify-between gap-8 h-16">
+        <div className="flex items-center justify-start gap-8 h-16">
           {/* Zone 1: Single text element wordmark */}
           <button
             type="button"
@@ -180,7 +106,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </nav>
 
           {/* Zone 3: 1 primary action button + patient portal trigger */}
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="ml-auto flex items-center gap-1.5 shrink-0">
             <button
               type="button"
               onClick={onOpenTracker}
@@ -206,6 +132,80 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span>Book Appointment</span>
             </button>
           </div>
+          
+          
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setIsViewMenuOpen((open) => !open)}
+              aria-expanded={isViewMenuOpen}
+              className="flex w-[125px] sm:w-[155px] items-center justify-between gap-2 rounded-lg border border-slate-300 bg-white pl-3 pr-2 py-2.5 text-xs sm:text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-700 cursor-pointer"
+            >
+              <span>
+                {activeView === 'home'
+                  ? 'Patient Site'
+                  : activeView === 'portal'
+                  ? 'Patient Portal'
+                  : activeView === 'admin'
+                  ? 'Admin Dashboard'
+                  : 'Dentist Schedule'}
+              </span>
+
+              <svg
+                className={`h-4 w-4 shrink-0 transition-transform ${
+                  isViewMenuOpen ? 'rotate-180' : ''
+                }`}
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M5.22 7.22a.75.75 0 011.06 0L10 10.94l3.72-3.72a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.22 8.28a.75.75 0 010-1.06z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </button>
+
+            {isViewMenuOpen && (
+              <div className="absolute left-0 top-full z-50 mt-2 w-full overflow-hidden rounded-lg border border-slate-200 bg-white py-1 shadow-lg">
+                {[
+                  { value: 'home', label: 'Patient Site' },
+                  { value: 'portal', label: 'Patient Portal' },
+                  { value: 'admin', label: 'Admin Dashboard' },
+                  { value: 'dentist', label: 'Dentist Schedule' },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => {
+                      const view = option.value as
+                        | 'home'
+                        | 'portal'
+                        | 'admin'
+                        | 'dentist';
+
+                      if (view === 'home' || view === 'portal') {
+                        onRoleChange('patient');
+                      } else if (view === 'admin') {
+                        onRoleChange('admin');
+                      } else {
+                        onRoleChange('dentist');
+                      }
+
+                      setActiveView(view);
+                      setIsViewMenuOpen(false);
+                    }}
+                    className="block w-full px-4 py-2.5 text-left text-sm text-slate-700 transition-colors hover:bg-teal-700 hover:text-white focus:bg-teal-700 focus:text-white focus:outline-none"
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+
         </div>
       </div>
     </header>
