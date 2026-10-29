@@ -14,7 +14,7 @@ export const DentistsSection: React.FC<DentistsSectionProps> = ({
   onSelectDentist,
 }) => {
   return (
-    <section id="dentists-section" className="py-16 md:py-24 bg-white border-b border-slate-200">
+    <section id="dentists-section" className="py-16 md:py-24 bg-white border-b border-slate-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="max-w-3xl mb-12">
           <div className="text-xs font-semibold uppercase tracking-wider text-teal-700 mb-2">
@@ -37,7 +37,7 @@ export const DentistsSection: React.FC<DentistsSectionProps> = ({
             return (
               <div
                 key={dentist.id}
-                className="rounded-xl border border-slate-200 bg-white overflow-hidden flex flex-col justify-between hover:border-slate-300 transition-all shadow-xs min-w-0"
+                className="rounded-xl border border-slate-300 bg-white overflow-hidden flex flex-col justify-between shadow-sm hover:border-teal-300 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 min-w-0"
               >
                 <div>
                   <div className="relative h-72 bg-slate-100 overflow-hidden isolate">

@@ -14,7 +14,7 @@ const CATEGORY_TABS: { label: string; value: ServiceCategory | 'all' }[] = [
   { label: 'Extraction & Oral Surgery', value: 'extraction_surgery' },
   { label: 'Braces & Alignment', value: 'braces_alignment' },
   { label: 'Dentures & Replacement', value: 'dentures_replacement' },
-  { label: 'Cosmetic Dentistry', value: 'cosmetic' },
+  { label: 'Cosmetic Dentistry', value: 'cosmetic' }, 
   { label: 'Consultation & Diagnostics', value: 'consultation' },
 ];
 
@@ -57,7 +57,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
         </div>
 
         {/* Interactive Filter Control (Buttons/Segmented Bar) */}
-        <div className="flex flex-wrap items-center gap-1.5 mb-10 p-1.5 bg-slate-200/70 rounded-xl">
+        <div className="flex flex-wrap items-center gap-1.5 mb-10 p-1.5 bg-slate-300/70 rounded-xl">
           {CATEGORY_TABS.map((tab) => {
             const isActive = activeCategory === tab.value;
             return (
@@ -65,9 +65,9 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
                 key={tab.value}
                 type="button"
                 onClick={() => setActiveCategory(tab.value)}
-                className={`px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg transition-all whitespace-nowrap ${
+                className={`px-3 py-1.5 text-sm sm:text-sm font-small rounded-lg transition-all whitespace-nowrap ${
                   isActive
-                    ? 'bg-white text-slate-900 shadow-xs'
+                    ? 'bg-white text-slate-900 shadow-md'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -82,7 +82,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
           {filteredServices.map((service) => (
             <div
               key={service.id}
-              className="bg-white rounded-xl border border-slate-200/90 p-6 flex flex-col justify-between hover:border-teal-400 hover:shadow-xs transition-all"
+              className="bg-white rounded-xl border border-slate-300 p-6 flex flex-col justify-between shadow-sm hover:border-teal-300 hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
             >
               <div>
                 {/* Unboxed Metadata (Zero-pill discipline) */}

@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Calendar, Shield, Stethoscope, Search, User, Clock, Phone } from 'lucide-react';
 import { UserRole } from '../../types';
-import { useState } from 'react';
+
 
 interface NavbarProps {
   currentRole: UserRole;
@@ -25,6 +25,61 @@ export const Navbar: React.FC<NavbarProps> = ({
   setActiveView,
 }) => {
   const [isViewMenuOpen, setIsViewMenuOpen] = useState(false);
+
+  const [activeSection, setActiveSection] = useState('');
+
+  
+  const viewMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close the viewing-mode dropdown when clicking outside it
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        viewMenuRef.current &&
+        !viewMenuRef.current.contains(event.target as Node)
+      ) {
+        setIsViewMenuOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Track which page section is currently active
+  useEffect(() => {
+    const sectionIds = [
+      'services-section',
+      'dentists-section',
+      'clinic-policies-section',
+    ];
+
+    const handleScroll = () => {
+      const marker = window.scrollY + 150;
+      let currentSection = '';
+
+      sectionIds.forEach((id) => {
+        const section = document.getElementById(id);
+
+        if (section && section.offsetTop <= marker) {
+          currentSection = id;
+        }
+      });
+
+      setActiveSection(currentSection);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    handleScroll();
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200">
@@ -54,6 +109,10 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
 
           {/* Zone 2: 4-5 clean single-line navigation links */}
+          {activeView !== 'portal' &&
+          activeView !== 'admin' &&
+          activeView !== 'dentist' && (
+
           <nav className="hidden lg:flex items-center gap-6 text-sm font-medium text-slate-600">
             <button
               type="button"
@@ -62,7 +121,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                 const el = document.getElementById('services-section');
                 el?.scrollIntoView({ behavior: 'smooth' });
               }}
-              className="hover:text-slate-900 transition-colors whitespace-nowrap"
+              className={`relative py-2 transition-colors whitespace-nowrap ${
+                          activeSection === 'services-section'
+                            ? 'text-teal-700 font-semibold after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:bg-teal-600'
+                            : 'text-slate-600 hover:text-teal-700'
+                        }`}
             >
               Services & Pricing
             </button>
@@ -73,7 +136,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                 const el = document.getElementById('dentists-section');
                 el?.scrollIntoView({ behavior: 'smooth' });
               }}
-              className="hover:text-slate-900 transition-colors whitespace-nowrap"
+              className={`relative py-2 transition-colors whitespace-nowrap ${
+                          activeSection === 'dentists-section'
+                            ? 'text-teal-700 font-semibold after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:bg-teal-600'
+                            : 'text-slate-600 hover:text-teal-700'
+                        }`}
             >
               Dentists
             </button>
@@ -84,14 +151,22 @@ export const Navbar: React.FC<NavbarProps> = ({
                 const el = document.getElementById('clinic-policies-section');
                 el?.scrollIntoView({ behavior: 'smooth' });
               }}
-              className="hover:text-slate-900 transition-colors whitespace-nowrap"
+              className={`relative py-2 transition-colors whitespace-nowrap ${
+                          activeSection === 'clinic-policies-section'
+                            ? 'text-teal-700 font-semibold after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:bg-teal-600'
+                            : 'text-slate-600 hover:text-teal-700'
+                        }`}
             >
               Clinic Policies
             </button>
             <button
               type="button"
               onClick={onOpenFAQ}
-              className="hover:text-slate-900 transition-colors whitespace-nowrap"
+              className={`relative py-2 transition-colors whitespace-nowrap ${
+                          activeSection === 'faq-section'
+                            ? 'text-teal-700 font-semibold after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:bg-teal-600'
+                            : 'text-slate-600 hover:text-teal-700'
+                        }`}
             >
               Prep & FAQ
             </button>
@@ -104,9 +179,13 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span>Track Booking</span>
             </button>
           </nav>
-
+        )}
           {/* Zone 3: 1 primary action button + patient portal trigger */}
           <div className="ml-auto flex items-center gap-1.5 shrink-0">
+             {activeView !== 'portal' &&
+              activeView !== 'admin' &&
+              activeView !== 'dentist' && (
+               <>
             <button
               type="button"
               onClick={onOpenTracker}
@@ -131,17 +210,19 @@ export const Navbar: React.FC<NavbarProps> = ({
               <Calendar className="w-4 h-4" />
               <span>Book Appointment</span>
             </button>
+            </>
+            )}
           </div>
           
           
-          <div className="relative">
+          <div className="relative -ml-3" ref={viewMenuRef}>
             <button
               type="button"
               onClick={() => setIsViewMenuOpen((open) => !open)}
               aria-expanded={isViewMenuOpen}
-              className="flex w-[125px] sm:w-[155px] items-center justify-between gap-2 rounded-lg border border-slate-300 bg-white pl-3 pr-2 py-2.5 text-xs sm:text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-700 cursor-pointer"
+              className="flex w-[145px] sm:w-[180px] items-center justify-between gap-2 rounded-lg border border-slate-300 bg-white pl-3 pr-2 py-2.5 text-xs sm:text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-700 cursor-pointer"
             >
-              <span>
+              <span className="whitespace-nowrap">
                 {activeView === 'home'
                   ? 'Patient Site'
                   : activeView === 'portal'

@@ -24,7 +24,7 @@ export const ClinicPoliciesSection: React.FC<ClinicPoliciesSectionProps> = ({ se
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Policy 1: Cancellation & Rescheduling */}
-          <div className="bg-white p-6 rounded-xl border border-slate-200">
+          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-lg hover:shadow-lg hover:border-teal-200 transition-all duration-300">
             <div className="w-10 h-10 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center mb-4">
               <RefreshCw className="w-5 h-5" />
             </div>
@@ -35,7 +35,7 @@ export const ClinicPoliciesSection: React.FC<ClinicPoliciesSectionProps> = ({ se
           </div>
 
           {/* Policy 2: On-Time Arrival & Buffers */}
-          <div className="bg-white p-6 rounded-xl border border-slate-200">
+          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-lg hover:shadow-lg hover:border-teal-200 transition-all duration-300">
             <div className="w-10 h-10 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center mb-4">
               <Clock className="w-5 h-5" />
             </div>
@@ -46,7 +46,7 @@ export const ClinicPoliciesSection: React.FC<ClinicPoliciesSectionProps> = ({ se
           </div>
 
           {/* Policy 3: Sterilization Standards */}
-          <div className="bg-white p-6 rounded-xl border border-slate-200">
+          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-lg hover:shadow-lg hover:border-teal-200 transition-all duration-300">
             <div className="w-10 h-10 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center mb-4">
               <ShieldCheck className="w-5 h-5" />
             </div>
@@ -57,7 +57,7 @@ export const ClinicPoliciesSection: React.FC<ClinicPoliciesSectionProps> = ({ se
           </div>
 
           {/* Policy 4: Insurance & Transparent Estimates */}
-          <div className="bg-white p-6 rounded-xl border border-slate-200">
+          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-lg hover:shadow-lg hover:border-teal-200 transition-all duration-300">
             <div className="w-10 h-10 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center mb-4">
               <CreditCard className="w-5 h-5" />
             </div>
@@ -68,7 +68,7 @@ export const ClinicPoliciesSection: React.FC<ClinicPoliciesSectionProps> = ({ se
           </div>
 
           {/* Policy 5: Emergency Triage */}
-          <div className="bg-white p-6 rounded-xl border border-slate-200">
+          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-lg hover:shadow-lg hover:border-teal-200 transition-all duration-300">
             <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center mb-4">
               <AlertCircle className="w-5 h-5" />
             </div>
@@ -79,7 +79,7 @@ export const ClinicPoliciesSection: React.FC<ClinicPoliciesSectionProps> = ({ se
           </div>
 
           {/* Policy 6: Location & Studio Access */}
-          <div className="bg-white p-6 rounded-xl border border-slate-200">
+          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-lg hover:shadow-lg hover:border-teal-200 transition-all duration-300">
             <div className="w-10 h-10 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center mb-4">
               <MapPin className="w-5 h-5" />
             </div>
