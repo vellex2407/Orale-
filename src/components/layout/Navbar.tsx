@@ -82,7 +82,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200">
+    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-teal-100 shadow-[0_4px_16px_rgba(13,148,136,0.30)]">
       
 
       {/* Top Bar Contract (Strict 3 Zones separated by gap-8) */}
@@ -229,7 +229,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   ? 'Patient Portal'
                   : activeView === 'admin'
                   ? 'Admin Dashboard'
-                  : 'Dentist Schedule'}
+                  : 'Dentist Portal'}
               </span>
 
               <svg
@@ -254,7 +254,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   { value: 'home', label: 'Patient Site' },
                   { value: 'portal', label: 'Patient Portal' },
                   { value: 'admin', label: 'Admin Dashboard' },
-                  { value: 'dentist', label: 'Dentist Schedule' },
+                  { value: 'dentist', label: 'Dentist Portal' },
                 ].map((option) => (
                   <button
                     key={option.value}

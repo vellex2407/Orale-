@@ -83,26 +83,26 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
     <div className="py-10 bg-slate-50 min-h-[calc(100vh-140px)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         {/* Header Strip with Patient Switcher */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-6 border-b border-slate-200">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 p-6 sm:p-8 rounded-2xl bg-gradient-to-r from-teal-800 via-teal-600 to-teal-400 shadow-[0_8px_24px_rgba(13,148,136,0.20)]">
           <div>
-            <div className="text-xs font-semibold uppercase tracking-wider text-teal-700">
+            <div className="text-xs font-semibold uppercase tracking-wider text-teal-100">
               Patient Portal & Health Record
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 mt-1">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white mt-1">
               Welcome back, {currentPatient?.firstName}
             </h1>
-            <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+            <p className="text-xs sm:text-sm text-teal-50 mt-0.5">
               Review upcoming appointments, reschedule visits, and keep your contact information updated.
             </p>
           </div>
 
           {/* Patient Profile Quick Switcher (Demo portfolio helper) */}
           <div className="flex items-center gap-2 self-start md:self-auto">
-            <span className="text-xs text-slate-500 font-medium">Switch Patient:</span>
+            <span className="text-xs text-teal-50 font-medium">Switch Patient:</span>
             <select
               value={currentPatient?.id}
               onChange={(e) => onSelectPatient(e.target.value)}
-              className="bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs text-slate-900 font-medium focus:ring-2 focus:ring-teal-500 focus:outline-hidden"
+              className="bg-white/95 border border-white/50 rounded-lg px-3 py-1.5 text-xs text-teal-900 font-medium focus:ring-2 focus:ring-teal-200 focus:outline-hidden"
             >
               {patients.map((p) => (
                 <option key={p.id} value={p.id}>
