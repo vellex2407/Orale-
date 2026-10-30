@@ -87,7 +87,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       {/* Top Bar Contract (Strict 3 Zones separated by gap-8) */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        <div className="flex items-center justify-start gap-8 h-16">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 py-2 sm:flex-nowrap sm:justify-start sm:gap-8 sm:py-0 sm:h-16">
           {/* Zone 1: Single text element wordmark */}
           <button
             type="button"
@@ -95,7 +95,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               setActiveView('home');
               onRoleChange('patient');
             }}
-            className="flex items-center gap-2.5 text-left focus-visible:outline-hidden group"
+            className="flex shrink-0 items-center gap-2.5 text-left focus-visible:outline-hidden group"
           >
             <div className="w-9 h-9 rounded-lg bg-teal-600 text-white flex items-center justify-center font-bold text-lg shadow-xs group-hover:bg-teal-700 transition-colors">
               O
@@ -113,7 +113,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           activeView !== 'admin' &&
           activeView !== 'dentist' && (
 
-          <nav className="hidden lg:flex items-center gap-6 text-sm font-medium text-slate-600">
+          <nav className="hidden xl:flex items-center gap-6 text-sm font-medium text-slate-600">
             <button
               type="button"
               onClick={() => {
@@ -189,7 +189,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               type="button"
               onClick={onOpenTracker}
-              className="lg:hidden p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg"
+              className="xl:hidden p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg"
               title="Track Booking"
             >
               <Search className="w-5 h-5" />
@@ -205,22 +205,23 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               type="button"
               onClick={onOpenBooking}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-lg shadow-xs hover:shadow transition-all whitespace-nowrap"
+              aria-label="Book Appointment"
+              className="inline-flex items-center justify-center gap-2 px-2.5 sm:px-4 py-2.5 text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-lg shadow-xs hover:shadow transition-all whitespace-nowrap"
             >
               <Calendar className="w-4 h-4" />
-              <span>Book Appointment</span>
+              <span className="hidden min-[380px]:inline">Book Appointment</span>
             </button>
             </>
             )}
           </div>
           
           
-          <div className="relative -ml-3" ref={viewMenuRef}>
+          <div className="relative ml-0 basis-full sm:ml-0 sm:basis-auto" ref={viewMenuRef}>
             <button
               type="button"
               onClick={() => setIsViewMenuOpen((open) => !open)}
               aria-expanded={isViewMenuOpen}
-              className="flex w-[145px] sm:w-[180px] items-center justify-between gap-2 rounded-lg border border-slate-300 bg-white pl-3 pr-2 py-2.5 text-xs sm:text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-700 cursor-pointer"
+              className="flex w-full sm:w-[180px] items-center justify-between gap-2 rounded-lg border border-slate-300 bg-white pl-3 pr-2 py-2.5 text-xs sm:text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-700 cursor-pointer"
             >
               <span className="whitespace-nowrap">
                 {activeView === 'home'

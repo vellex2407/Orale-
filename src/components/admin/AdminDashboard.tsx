@@ -210,8 +210,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   return (
-    <div className="py-8 bg-slate-100 min-h-[calc(100vh-140px)]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-6">
+    <div className="py-5 sm:py-8 bg-slate-100 min-h-[calc(100vh-140px)]">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 space-y-6">
         {/* Dashboard Title & Top Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
           <div>
@@ -236,42 +236,42 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
 
         {/* 5-Metric Strip */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3.5">
+          <div className="min-w-0 bg-white p-3 sm:p-4 rounded-xl border border-slate-200 shadow-2xs">
             <div className="text-xs font-medium text-slate-500">Today's Visits</div>
-            <div className="text-2xl font-bold font-mono tabular-nums text-slate-900 mt-1">
+            <div className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-slate-900 mt-1">
               {todayAppointments.length}
             </div>
             <div className="text-[11px] text-teal-700 mt-0.5">Scheduled for today</div>
           </div>
 
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
+          <div className="min-w-0 bg-white p-3 sm:p-4 rounded-xl border border-slate-200 shadow-2xs">
             <div className="text-xs font-medium text-slate-500">Pending Review</div>
-            <div className="text-2xl font-bold font-mono tabular-nums text-amber-700 mt-1">
+            <div className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-amber-700 mt-1">
               {pendingCount}
             </div>
             <div className="text-[11px] text-amber-600 mt-0.5">Awaiting staff confirmation</div>
           </div>
 
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
+          <div className="min-w-0 bg-white p-3 sm:p-4 rounded-xl border border-slate-200 shadow-2xs">
             <div className="text-xs font-medium text-slate-500">Completed Visits</div>
-            <div className="text-2xl font-bold font-mono tabular-nums text-emerald-700 mt-1">
+            <div className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-emerald-700 mt-1">
               {completedTodayCount}
             </div>
             <div className="text-[11px] text-slate-400 mt-0.5">Finished today</div>
           </div>
 
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
+          <div className="min-w-0 bg-white p-3 sm:p-4 rounded-xl border border-slate-200 shadow-2xs">
             <div className="text-xs font-medium text-slate-500">Cancellations</div>
-            <div className="text-2xl font-bold font-mono tabular-nums text-slate-700 mt-1">
+            <div className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-slate-700 mt-1">
               {cancelledCount}
             </div>
             <div className="text-[11px] text-slate-400 mt-0.5">Slots released</div>
           </div>
 
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs col-span-2 sm:col-span-1">
+          <div className="min-w-0 bg-white p-3 sm:p-4 rounded-xl border border-slate-200 shadow-2xs col-span-2 sm:col-span-1">
             <div className="text-xs font-medium text-slate-500">Estimated Revenue</div>
-            <div className="text-2xl font-bold font-mono tabular-nums text-slate-900 mt-1">
+            <div className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-slate-900 mt-1 break-words">
               ₱{estimatedRevenue.toLocaleString()}
             </div>
             <div className="text-[11px] text-slate-400 mt-0.5">Active treatment pipeline</div>
@@ -622,11 +622,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </p>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex w-full sm:w-auto items-center gap-3">
                 <select
                   value={selectedDentistScheduleId}
                   onChange={(e) => setSelectedDentistScheduleId(e.target.value)}
-                  className="bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-900"
+                  className="min-w-0 flex-1 sm:flex-none bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-900"
                 >
                   {dentists.map((d) => (
                     <option key={d.id} value={d.id}>
@@ -638,7 +638,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsTimeOffModalOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg"
+                  className="inline-flex shrink-0 items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Block Time-Off / Leave</span>
@@ -651,64 +651,66 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <div className="p-4 border-b border-slate-200 font-bold text-sm text-slate-900">
                 Weekly Clinical Schedule for {dentists.find((d) => d.id === selectedDentistScheduleId)?.name}
               </div>
-              <table className="w-full text-left text-xs text-slate-600">
-                <thead className="bg-slate-50 text-[11px] font-semibold text-slate-700 uppercase tracking-wider border-b border-slate-200">
-                  <tr>
-                    <th className="py-2.5 px-4">Day of Week</th>
-                    <th className="py-2.5 px-4">Status</th>
-                    <th className="py-2.5 px-4">Working Hours</th>
-                    <th className="py-2.5 px-4">Lunch / Break Period</th>
-                    <th className="py-2.5 px-4 text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {[1, 2, 3, 4, 5, 6, 0].map((dayIndex) => {
-                    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-                    const wh = workingHours.find(
-                      (w) => w.dentistId === selectedDentistScheduleId && w.dayOfWeek === dayIndex
-                    );
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[640px] text-left text-xs text-slate-600">
+                  <thead className="bg-slate-50 text-[11px] font-semibold text-slate-700 uppercase tracking-wider border-b border-slate-200">
+                    <tr>
+                      <th className="py-2.5 px-4">Day of Week</th>
+                      <th className="py-2.5 px-4">Status</th>
+                      <th className="py-2.5 px-4">Working Hours</th>
+                      <th className="py-2.5 px-4">Lunch / Break Period</th>
+                      <th className="py-2.5 px-4 text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {[1, 2, 3, 4, 5, 6, 0].map((dayIndex) => {
+                      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                      const wh = workingHours.find(
+                        (w) => w.dentistId === selectedDentistScheduleId && w.dayOfWeek === dayIndex
+                      );
 
-                    return (
-                      <tr key={dayIndex} className="hover:bg-slate-50/70">
-                        <td className="py-3 px-4 font-semibold text-slate-900">{dayNames[dayIndex]}</td>
-                        <td className="py-3 px-4">
-                          <span
-                            className={`px-2 py-0.5 rounded text-[11px] font-semibold ${
-                              wh?.isWorkingDay
-                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                : 'bg-slate-100 text-slate-500'
-                            }`}
-                          >
-                            {wh?.isWorkingDay ? 'Active Clinic Day' : 'Day Off'}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 font-mono">
-                          {wh?.isWorkingDay ? `${wh.startTime} – ${wh.endTime}` : '—'}
-                        </td>
-                        <td className="py-3 px-4 font-mono">
-                          {wh?.isWorkingDay && wh.breakStartTime ? `${wh.breakStartTime} – ${wh.breakEndTime}` : '—'}
-                        </td>
-                        <td className="py-3 px-4 text-right">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (!wh) return;
-                              DentalStorage.saveWorkingHours({
-                                ...wh,
-                                isWorkingDay: !wh.isWorkingDay,
-                              });
-                              onRefreshData();
-                            }}
-                            className="text-xs text-teal-700 font-semibold hover:underline"
-                          >
-                            {wh?.isWorkingDay ? 'Toggle Off' : 'Toggle On'}
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                      return (
+                        <tr key={dayIndex} className="hover:bg-slate-50/70">
+                          <td className="py-3 px-4 font-semibold text-slate-900">{dayNames[dayIndex]}</td>
+                          <td className="py-3 px-4">
+                            <span
+                              className={`px-2 py-0.5 rounded text-[11px] font-semibold ${
+                                wh?.isWorkingDay
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                  : 'bg-slate-100 text-slate-500'
+                              }`}
+                            >
+                              {wh?.isWorkingDay ? 'Active Clinic Day' : 'Day Off'}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 font-mono">
+                            {wh?.isWorkingDay ? `${wh.startTime} – ${wh.endTime}` : '—'}
+                          </td>
+                          <td className="py-3 px-4 font-mono">
+                            {wh?.isWorkingDay && wh.breakStartTime ? `${wh.breakStartTime} – ${wh.breakEndTime}` : '—'}
+                          </td>
+                          <td className="py-3 px-4 text-right">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (!wh) return;
+                                DentalStorage.saveWorkingHours({
+                                  ...wh,
+                                  isWorkingDay: !wh.isWorkingDay,
+                                });
+                                onRefreshData();
+                              }}
+                              className="text-xs text-teal-700 font-semibold hover:underline"
+                            >
+                              {wh?.isWorkingDay ? 'Toggle Off' : 'Toggle On'}
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             {/* Blocked Time-off List */}
@@ -1021,8 +1023,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
         {/* MODAL: ADD WALK-IN APPOINTMENT */}
         {isWalkInModalOpen && (
-          <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-            <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+          <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-start sm:items-center justify-center p-2 sm:p-4">
+            <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl border border-slate-200 max-h-[calc(100dvh-1rem)] overflow-y-auto sm:max-h-[90vh]">
               <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
                 <h3 className="text-base font-bold text-slate-900">Add Walk-In / Phone Booking</h3>
                 <button
@@ -1041,7 +1043,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="text-slate-700 font-semibold block mb-1">First Name *</label>
                     <input
@@ -1075,7 +1077,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="text-slate-700 font-semibold block mb-1">Dental Service</label>
                     <select
@@ -1107,7 +1109,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="text-slate-700 font-semibold block mb-1">Date</label>
                     <input
@@ -1152,8 +1154,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
         {/* MODAL: STATUS ACTION NOTES */}
         {statusActionModal && (
-          <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-            <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+          <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-start sm:items-center justify-center p-2 sm:p-4">
+            <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-200 max-h-[calc(100dvh-1rem)] overflow-y-auto sm:max-h-[90vh]">
               <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
                 <h3 className="text-base font-bold text-slate-900">
                   Update Status to: {statusActionModal.nextStatus.toUpperCase().replace('_', ' ')}
@@ -1207,8 +1209,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
         {/* MODAL: NOTIFICATION PREVIEW */}
         {selectedNotification && (
-          <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-            <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+          <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-start sm:items-center justify-center p-2 sm:p-4">
+            <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl border border-slate-200 max-h-[calc(100dvh-1rem)] overflow-y-auto sm:max-h-[90vh]">
               <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold uppercase tracking-wider text-teal-700">
@@ -1265,8 +1267,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
         {/* MODAL: TIME OFF BLOCKING */}
         {isTimeOffModalOpen && (
-          <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-            <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+          <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-start sm:items-center justify-center p-2 sm:p-4">
+            <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-200 max-h-[calc(100dvh-1rem)] overflow-y-auto sm:max-h-[90vh]">
               <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
                 <h3 className="text-base font-bold text-slate-900">Block Clinician Time-Off</h3>
                 <button

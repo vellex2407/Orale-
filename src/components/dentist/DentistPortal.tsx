@@ -53,22 +53,22 @@ export const DentistPortal: React.FC<DentistPortalProps> = ({
   };
 
   return (
-    <div className="py-8 bg-slate-100 min-h-[calc(100vh-140px)]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-6">
+    <div className="py-5 sm:py-8 bg-slate-100 min-h-[calc(100vh-140px)]">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 space-y-6">
         {/* Clinician Header with Switcher */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 min-w-0 p-6 sm:p-8 rounded-2xl bg-gradient-to-r from-teal-800 via-teal-600 to-teal-400 shadow-[0_8px_24px_rgba(13,148,136,0.30)]">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 min-w-0 p-4 sm:p-8 rounded-2xl bg-gradient-to-r from-teal-800 via-teal-600 to-teal-400 shadow-[0_8px_24px_rgba(13,148,136,0.30)]">
+          <div className="flex min-w-0 items-center gap-3">
             <img
               src={activeDentist?.avatarUrl}
               alt={activeDentist?.name}
               className="w-12 h-12 rounded-full object-cover border border-slate-300"
               referrerPolicy="no-referrer"
             />
-            <div>
+            <div className="min-w-0">
               <div className="text-xs font-semibold uppercase tracking-wider text-teal-100">
                 Operatory Clinical View
               </div>
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
+              <h1 className="text-lg sm:text-2xl font-bold tracking-tight text-white">
                 {activeDentist?.name} — Chairside Schedule
               </h1>
               <p className="text-xs text-teal-50">{activeDentist?.title}</p>
@@ -92,7 +92,7 @@ export const DentistPortal: React.FC<DentistPortalProps> = ({
         </div>
 
         {/* Today's Operatory Queue */}
-        <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-4 shadow-2xs">
+        <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6 space-y-4 shadow-2xs">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div>
               <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
@@ -130,7 +130,7 @@ export const DentistPortal: React.FC<DentistPortalProps> = ({
                   >
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div className="space-y-1">
-                        <div className="flex items-center gap-2 text-xs">
+                        <div className="flex flex-wrap items-center gap-2 text-xs">
                           <span className="font-mono font-bold text-slate-900 tabular-nums">
                             {apt.startTime} – {apt.endTime}
                           </span>
@@ -219,7 +219,7 @@ export const DentistPortal: React.FC<DentistPortalProps> = ({
         </div>
 
         {/* Upcoming Patient Queue */}
-        <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-4 shadow-2xs">
+        <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6 space-y-4 shadow-2xs">
           <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
             <Calendar className="w-5 h-5 text-slate-600" />
             <span>Upcoming Scheduled Consultations ({upcomingApts.length})</span>
@@ -233,9 +233,9 @@ export const DentistPortal: React.FC<DentistPortalProps> = ({
                 const s = services.find((serv) => serv.id === apt.serviceId);
                 const patient = patients.find((p) => p.id === apt.patientId);
                 return (
-                  <div key={apt.id} className="py-3 flex items-center justify-between gap-4 text-xs">
-                    <div>
-                      <div className="flex items-center gap-2 text-slate-500">
+                  <div key={apt.id} className="py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 text-xs">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2 text-slate-500">
                         <span className="font-semibold text-slate-900 font-mono">{formatDateReadable(apt.date)}</span>
                         <span aria-hidden="true">·</span>
                         <span className="font-mono">{apt.startTime}</span>

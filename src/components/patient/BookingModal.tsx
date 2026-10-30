@@ -216,7 +216,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 md:p-6">
       <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
         {/* Modal Header */}
-        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+        <div className="px-4 sm:px-6 py-4 border-b border-slate-300 flex items-center justify-between bg-slate-50">
           <div>
             <span className="text-[11px] font-semibold tracking-wider uppercase text-teal-700">
               {currentStep <= 5 ? `Step ${currentStep} of 5` : 'Booking Complete'}
@@ -250,7 +250,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
         )}
 
         {/* Modal Body with Scroll */}
-        <div className="p-6 overflow-y-auto flex-1 space-y-6">
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-6">
           {errorMessage && (
             <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 flex items-start gap-3 text-rose-800 text-sm">
               <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
@@ -264,7 +264,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
           {/* STEP 1: Select Dental Service */}
           {currentStep === 1 && (
             <div className="space-y-4">
-              <p className="text-xs sm:text-sm text-slate-600">
+              <p className="text-sm text-slate-700 leading-relaxed">
                 Choose the procedure you require. Duration and buffer times are calculated automatically to avoid waiting room delays.
               </p>
 
@@ -275,15 +275,15 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                     <div
                       key={service.id}
                       onClick={() => setSelectedServiceId(service.id)}
-                      className={`p-4 rounded-xl border cursor-pointer transition-all ${
+                      className={`p-3 sm:p-4 rounded-xl border cursor-pointer transition-all ${
                         isSelected
-                          ? 'border-teal-600 bg-teal-50/50 ring-1 ring-teal-600'
-                          : 'border-slate-200 hover:border-slate-300 bg-white'
+                          ? 'border-teal-700 bg-teal-50 ring-2 ring-teal-600/30'
+                          : 'border-slate-300 hover:border-teal-500 bg-white'
                       }`}
                     >
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <div className="flex items-center gap-2 text-xs text-slate-500 mb-1">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] sm:text-xs text-slate-700 mb-1">
                             <span className="font-semibold uppercase tracking-wider text-teal-700">
                               {service.category.replace('_', ' ')}
                             </span>
@@ -293,7 +293,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                           <h4 className="text-sm sm:text-base font-bold text-slate-900">
                             {service.name}
                           </h4>
-                          <p className="text-xs text-slate-600 mt-1 line-clamp-2">
+                          <p className="text-[13px] sm:text-sm leading-relaxed text-slate-700 mt-1 line-clamp-2">
                             {service.description}
                           </p>
                           {service.requiresConsultationFirst && (
@@ -302,11 +302,11 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                             </span>
                           )}
                         </div>
-                        <div className="text-right shrink-0">
+                        <div className="w-full flex items-center justify-between gap-3 border-t border-slate-200 pt-2 sm:w-auto sm:shrink-0 sm:flex-col sm:items-end sm:border-0 sm:pt-0">
                           <span className="text-[11px] text-teal-800 font-semibold uppercase tracking-wider block">
                             Fixed Fee
                           </span>
-                          <span className="text-sm font-bold font-mono tabular-nums text-slate-900 block">
+                          <span className="text-base sm:text-sm font-bold font-mono tabular-nums text-slate-950 block text-right whitespace-normal">
                             {service.priceRange || `₱${service.price.toLocaleString()}`}
                           </span>
                         </div>

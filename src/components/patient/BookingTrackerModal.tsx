@@ -179,15 +179,15 @@ export const BookingTrackerModal: React.FC<BookingTrackerModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 md:p-6">
-      <div className="relative w-full max-w-xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 md:p-6">
+      <div className="relative w-full max-w-xl min-w-0 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[calc(100dvh-1rem)] sm:max-h-[90vh]">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200 flex items-start justify-between gap-3 bg-slate-50">
           <div>
             <span className="text-[11px] font-semibold tracking-wider uppercase text-teal-700">
               Live Patient Service
             </span>
-            <h2 className="text-lg font-bold text-slate-900">Track or Manage Appointment</h2>
+            <h2 className="text-base sm:text-lg font-bold text-slate-900">Track or Manage Appointment</h2>
           </div>
           <button
             type="button"
@@ -205,7 +205,7 @@ export const BookingTrackerModal: React.FC<BookingTrackerModalProps> = ({
             <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider block">
               Enter Booking Reference or Contact Phone / Email
             </label>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <div className="relative flex-1">
                 <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
                 <input
@@ -486,7 +486,7 @@ export const BookingTrackerModal: React.FC<BookingTrackerModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-3 border-t border-slate-200 bg-slate-50 flex items-center justify-between text-xs text-slate-500">
+        <div className="px-4 sm:px-6 py-3 border-t border-slate-200 bg-slate-50 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 text-xs text-slate-500">
           <span>Need live assistance? Call {settings.phone}</span>
           <button
             type="button"

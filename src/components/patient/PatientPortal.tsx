@@ -83,8 +83,8 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
     <div className="py-10 bg-slate-50 min-h-[calc(100vh-140px)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         {/* Header Strip with Patient Switcher */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 p-6 sm:p-8 rounded-2xl bg-gradient-to-r from-teal-800 via-teal-600 to-teal-400 shadow-[0_8px_24px_rgba(13,148,136,0.20)]">
-          <div>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 p-4 sm:p-8 rounded-2xl bg-gradient-to-r from-teal-800 via-teal-600 to-teal-400 shadow-[0_8px_24px_rgba(13,148,136,0.20)]">
+          <div className="min-w-0">
             <div className="text-xs font-semibold uppercase tracking-wider text-teal-100">
               Patient Portal & Health Record
             </div>
@@ -97,12 +97,12 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
           </div>
 
           {/* Patient Profile Quick Switcher (Demo portfolio helper) */}
-          <div className="flex items-center gap-2 self-start md:self-auto">
+          <div className="flex w-full flex-wrap items-center gap-2 self-start md:w-auto md:self-auto">
             <span className="text-xs text-teal-50 font-medium">Switch Patient:</span>
             <select
               value={currentPatient?.id}
               onChange={(e) => onSelectPatient(e.target.value)}
-              className="bg-white/95 border border-white/50 rounded-lg px-3 py-1.5 text-xs text-teal-900 font-medium focus:ring-2 focus:ring-teal-200 focus:outline-hidden"
+              className="min-w-0 flex-1 md:flex-none bg-white/95 border border-white/50 rounded-lg px-3 py-1.5 text-xs text-teal-900 font-medium focus:ring-2 focus:ring-teal-200 focus:outline-hidden"
             >
               {patients.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -114,7 +114,7 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
             <button
               type="button"
               onClick={onOpenBooking}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold rounded-lg transition-colors whitespace-nowrap shadow-2xs"
+              className="inline-flex shrink-0 items-center gap-1.5 px-3.5 py-1.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold rounded-lg transition-colors whitespace-nowrap shadow-2xs"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Book Appointment</span>
