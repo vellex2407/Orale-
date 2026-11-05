@@ -5,7 +5,7 @@ import {
   TimeOff,
   Patient,
   Appointment,
-  NotificationLog,
+  NotificationLog,  
   AuditLog,
   ClinicSettings,
   AppointmentStatus,

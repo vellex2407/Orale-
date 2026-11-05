@@ -40,6 +40,8 @@ interface AdminDashboardProps {
   services: DentalService[];
   dentists: Dentist[];
   settings: ClinicSettings;
+  appointments: Appointment[];
+  patients: Patient[];
   onRefreshData: () => void;
   onOpenBooking: () => void;
 }
@@ -48,6 +50,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   services,
   dentists,
   settings,
+  appointments,
+  patients,
   onRefreshData,
   onOpenBooking,
 }) => {
@@ -99,8 +103,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [settingsSavedMessage, setSettingsSavedMessage] = useState<boolean>(false);
 
   // Data
-  const appointments = DentalStorage.getAppointments();
-  const patients = DentalStorage.getPatients();
+  // Appointments and patients are now supplied by MySQL through App.tsx.
+  // Other dashboard data will be migrated in later steps.
   const workingHours = DentalStorage.getWorkingHours();
   const timeOffs = DentalStorage.getTimeOff();
   const notifications = DentalStorage.getNotifications();
@@ -134,21 +138,52 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     .filter((a) => a.status === 'completed' || a.status === 'confirmed' || a.status === 'arrived')
     .reduce((sum, a) => sum + (a.totalPrice || 0), 0);
 
+  
   // Handle status update
-  const handleExecuteStatusChange = () => {
+  const handleExecuteStatusChange = async () => {
     if (!statusActionModal) return;
 
-    DentalStorage.updateAppointmentStatus(
-      statusActionModal.appointment.id,
-      statusActionModal.nextStatus,
-      'Clinic Administrator (Reception)',
-      actionNotes.trim() || undefined
-    );
+    try {
+      const response = await fetch(
+        `/api/appointments/${statusActionModal.appointment.id}/status`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            status: statusActionModal.nextStatus,
+            performedBy: 'Clinic Administrator (Reception)',
+            notes: actionNotes.trim() || undefined,
+          }),
+        }
+      );
 
-    setStatusActionModal(null);
-    setActionNotes('');
-    onRefreshData();
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message || 'Failed to update appointment status.'
+        );
+      }
+
+      setStatusActionModal(null);
+      setActionNotes('');
+
+      // Reload appointments and audit logs from MySQL.
+      onRefreshData();
+
+    } catch (error) {
+      console.error('Failed to update appointment status:', error);
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : 'Unable to update appointment status. Please try again.'
+      );
+    }
   };
+
 
   // Handle walk-in creation
   const handleCreateWalkIn = () => {

@@ -17,16 +17,81 @@ import { ClinicFAQModal } from './components/patient/ClinicFAQModal';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { DentistPortal } from './components/dentist/DentistPortal';
 import { DentalStorage } from './services/storage';
-import { UserRole, Appointment } from './types';
+import { 
+  UserRole,
+  Appointment,
+  DentalService,
+  Dentist,
+  Patient,
+  ClinicSettings,
+} from './types';
+
+interface ClinicDataResponse {
+  services: DentalService[];
+  dentists: Dentist[];
+  settings: ClinicSettings;
+  appointments: Appointment[];
+  patients: Patient[];
+}
 
 export default function App() {
-  // Initialize relational storage
+  // Initial fallback data while MySQL data is loading
+  const [services, setServices] = useState<DentalService[]>(() =>
+    DentalStorage.getServices()
+  );
+
+  const [dentists, setDentists] = useState<Dentist[]>(() =>
+    DentalStorage.getDentists()
+  );
+
+  const [settings, setSettings] = useState<ClinicSettings>(() =>
+    DentalStorage.getSettings()
+  );
+
+  // Appointments and patients loaded from MySQL
+  const [appointments, setAppointments] = useState<Appointment[]>(() =>
+    DentalStorage.getAppointments()
+  );
+
+  const [patients, setPatients] = useState<Patient[]>(() =>
+    DentalStorage.getPatients()
+  );
+
+  // Load clinic data from MySQL
+  const loadClinicData = async () => {
+    try {
+      const response = await fetch('/api/clinic-data');
+
+      if (!response.ok) {
+        throw new Error(`Failed to load clinic data (${response.status})`);
+      }
+
+      const data: ClinicDataResponse = await response.json();
+
+      setServices(data.services);
+      setDentists(data.dentists);
+      setSettings(data.settings);
+
+      setAppointments(data.appointments);
+      setPatients(data.patients);
+
+      console.log('Clinic data successfully loaded from MySQL.');
+    } catch (error) {
+      console.error('Error loading clinic data:', error);
+    }
+  };
+
+  // Initialize local storage for components not yet migrated,
+  // then retrieve the latest shared data from MySQL.
   useEffect(() => {
     DentalStorage.init();
+    void loadClinicData();
   }, []);
 
-  const [dataVersion, setDataVersion] = useState<number>(0);
-  const handleRefreshData = () => setDataVersion((v) => v + 1);
+  // Refresh shared clinic data after bookings or other changes
+  const handleRefreshData = () => {
+    void loadClinicData();
+  };
 
   // Active role & view state
   const [currentRole, setCurrentRole] = useState<UserRole>('patient');
@@ -45,11 +110,6 @@ export default function App() {
   // Active patient for portal
   const [currentPatientId, setCurrentPatientId] = useState<string>('pat-1');
 
-  // Load latest data from storage
-  const services = DentalStorage.getServices();
-  const dentists = DentalStorage.getDentists();
-  const settings = DentalStorage.getSettings();
-
   const handleOpenBooking = (serviceId?: string, dentistId?: string) => {
     setBookingServiceId(serviceId);
     setBookingDentistId(dentistId);
@@ -61,7 +121,7 @@ export default function App() {
     setIsTrackerModalOpen(true);
   };
 
-  const handleBookingSuccess = (newAppointment: Appointment) => {
+  const handleBookingSuccess = () => {
     handleRefreshData();
   };
 
@@ -138,6 +198,8 @@ export default function App() {
             services={services}
             dentists={dentists}
             settings={settings}
+            appointments={appointments}
+            patients={patients}
             onRefreshData={handleRefreshData}
             onOpenBooking={() => handleOpenBooking()}
           />

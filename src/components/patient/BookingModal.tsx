@@ -14,7 +14,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { DentalService, Dentist, ClinicSettings, Appointment } from '../../types';
-import { DentalStorage, formatDateReadable } from '../../services/storage';
+import { formatDateReadable } from '../../services/storage';
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -78,8 +78,11 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   const [agreedToPolicy, setAgreedToPolicy] = useState<boolean>(true);
 
   // Slot calculations
-  const [availableSlots, setAvailableSlots] = useState<{ time: string; dentistId: string; dentistName: string }[]>([]);
+  const [availableSlots, setAvailableSlots] = useState<
+    { time: string; dentistId: string; dentistName: string }[]
+  >([]);
   const [loadingSlots, setLoadingSlots] = useState<boolean>(false);
+  const [availabilityError, setAvailabilityError] = useState<string | null>(null);
 
   // Submission error & confirmed appointment
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -92,23 +95,62 @@ export const BookingModal: React.FC<BookingModalProps> = ({
     if (initialDentistId) setSelectedDentistId(initialDentistId);
   }, [initialServiceId, initialDentistId]);
 
-  // Recalculate available slots whenever service, dentist preference, or date changes
-  useEffect(() => {
-    if (!selectedServiceId || !selectedDate) return;
+// Fetch available slots from the MySQL-backed API
+useEffect(() => {
+  if (!isOpen || !selectedServiceId || !selectedDate) return;
 
+  const controller = new AbortController();
+
+  const fetchAvailableSlots = async () => {
     setLoadingSlots(true);
     setSelectedTimeSlot(null);
+    setAvailabilityError(null);
+    setAvailableSlots([]);
 
-    // Compute slots
-    const slots = DentalStorage.getAvailableSlots({
-      serviceId: selectedServiceId,
-      dentistId: selectedDentistId,
-      date: selectedDate,
-    });
+    try {
+      const params = new URLSearchParams({
+        serviceId: selectedServiceId,
+        date: selectedDate,
+        dentistId: selectedDentistId,
+      });
 
-    setAvailableSlots(slots);
-    setLoadingSlots(false);
-  }, [selectedServiceId, selectedDentistId, selectedDate]);
+      const response = await fetch(`/api/availability?${params.toString()}`, {
+        signal: controller.signal,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Unable to retrieve available appointment slots.');
+      }
+
+      setAvailableSlots(data.slots || []);
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        return;
+      }
+
+      console.error('Availability API error:', error);
+
+      setAvailableSlots([]);
+      setAvailabilityError(
+        error instanceof Error
+          ? error.message
+          : 'Something went wrong while checking availability.'
+      );
+    } finally {
+      if (!controller.signal.aborted) {
+        setLoadingSlots(false);
+      }
+    }
+  };
+
+  fetchAvailableSlots();
+
+  return () => {
+    controller.abort();
+  };
+}, [isOpen, selectedServiceId, selectedDentistId, selectedDate]);
 
   if (!isOpen) return null;
 
@@ -148,41 +190,69 @@ export const BookingModal: React.FC<BookingModalProps> = ({
     patientInfo.phone.trim().length >= 7;
 
   // Final submission
-  const handleSubmitBooking = () => {
+  const handleSubmitBooking = async () => {
     if (!currentService || !selectedTimeSlot) return;
 
     setIsSubmitting(true);
     setErrorMessage(null);
 
     const mergedAlerts = [...patientInfo.medicalAlerts];
-    if (medicalNoteInput.trim() && !mergedAlerts.includes(medicalNoteInput.trim())) {
+
+    if (
+      medicalNoteInput.trim() &&
+      !mergedAlerts.includes(medicalNoteInput.trim())
+    ) {
       mergedAlerts.push(medicalNoteInput.trim());
     }
 
-    const result = DentalStorage.bookAppointment({
-      serviceId: currentService.id,
-      dentistId: selectedTimeSlot.dentistId,
-      date: selectedDate,
-      startTime: selectedTimeSlot.time,
-      patientInfo: {
-        ...patientInfo,
-        medicalAlerts: mergedAlerts,
-      },
-      patientNotes: patientNotes.trim() || undefined,
-    });
+    try {
+      const response = await fetch('/api/appointments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          serviceId: currentService.id,
+          dentistId: selectedTimeSlot.dentistId,
+          date: selectedDate,
+          startTime: selectedTimeSlot.time,
+          patientInfo: {
+            ...patientInfo,
+            medicalAlerts: mergedAlerts,
+          },
+          patientNotes: patientNotes.trim() || undefined,
+        }),
+      });
 
-    setIsSubmitting(false);
+      const result = await response.json();
 
-    if (!result.success || !result.appointment) {
-      setErrorMessage(result.error || 'The requested slot is no longer available. Please choose another time.');
-      // Return to step 3 so the patient can pick another slot without retyping their info
-      setCurrentStep(3);
-      return;
+      if (!response.ok || !result.appointment) {
+        setErrorMessage(
+          result.message ||
+            'The requested slot is no longer available. Please choose another time.'
+        );
+
+        // If the slot is no longer available, let the patient select another.
+        if (response.status === 409) {
+          setSelectedTimeSlot(null);
+          setCurrentStep(3);
+        }
+
+        return;
+      }
+
+      setConfirmedAppointment(result.appointment);
+      onBookingSuccess(result.appointment);
+      setCurrentStep(6);
+    } catch (error) {
+      console.error('Booking submission failed:', error);
+
+      setErrorMessage(
+        'Unable to submit your booking. Please check your connection and try again.'
+      );
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setConfirmedAppointment(result.appointment);
-    onBookingSuccess(result.appointment);
-    setCurrentStep(6); // Success screen
   };
 
   // Download .ics calendar invite
@@ -436,50 +506,58 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                   </span>
                 </div>
 
-                {loadingSlots ? (
-                  <div className="p-8 text-center text-slate-500 text-sm">
-                    Checking clinical chair availability...
-                  </div>
-                ) : availableSlots.length === 0 ? (
-                  <div className="p-8 text-center rounded-xl bg-slate-50 border border-slate-200 text-slate-600 text-sm">
-                    <p className="font-semibold text-slate-900">No open slots on this date.</p>
-                    <p className="text-xs text-slate-500 mt-1">
-                      The clinician may be off or fully booked. Please select another date.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 max-h-52 overflow-y-auto pr-1">
-                    {availableSlots.map((slot) => {
-                      const isSelected =
-                        selectedTimeSlot?.time === slot.time &&
-                        selectedTimeSlot?.dentistId === slot.dentistId;
+                
+              {loadingSlots ? (
+                <div className="p-8 text-center text-slate-500 text-sm">
+                  Checking clinical chair availability...
+                </div>
+              ) : availabilityError ? (
+                <div className="p-8 text-center rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm">
+                  <p className="font-semibold">Unable to check availability.</p>
+                  <p className="text-xs mt-1">{availabilityError}</p>
+                </div>
+              ) : availableSlots.length === 0 ? (
+                <div className="p-8 text-center rounded-xl bg-slate-50 border border-slate-200 text-slate-600 text-sm">
+                  <p className="font-semibold text-slate-900">
+                    No open slots on this date.
+                  </p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    The clinician may be off or fully booked. Please select another date.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 max-h-52 overflow-y-auto pr-1">
+                  {availableSlots.map((slot) => {
+                    const isSelected =
+                      selectedTimeSlot?.time === slot.time &&
+                      selectedTimeSlot?.dentistId === slot.dentistId;
 
-                      return (
-                        <button
-                          key={`${slot.time}_${slot.dentistId}`}
-                          type="button"
-                          onClick={() => setSelectedTimeSlot(slot)}
-                          className={`p-3 rounded-lg border text-left transition-all ${
-                            isSelected
-                              ? 'border-teal-600 bg-teal-600 text-white shadow-xs'
-                              : 'border-slate-200 hover:border-slate-400 bg-white text-slate-900'
+                    return (
+                      <button
+                        key={`${slot.time}_${slot.dentistId}`}
+                        type="button"
+                        onClick={() => setSelectedTimeSlot(slot)}
+                        className={`p-3 rounded-lg border text-left transition-all ${
+                          isSelected
+                            ? 'border-teal-600 bg-teal-600 text-white shadow-xs'
+                            : 'border-slate-200 hover:border-slate-400 bg-white text-slate-900'
+                        }`}
+                      >
+                        <div className="font-mono text-sm font-bold tabular-nums">
+                          {slot.time}
+                        </div>
+                        <div
+                          className={`text-[11px] truncate mt-0.5 ${
+                            isSelected ? 'text-teal-100' : 'text-slate-500'
                           }`}
                         >
-                          <div className="font-mono text-sm font-bold tabular-nums">
-                            {slot.time}
-                          </div>
-                          <div
-                            className={`text-[11px] truncate mt-0.5 ${
-                              isSelected ? 'text-teal-100' : 'text-slate-500'
-                            }`}
-                          >
-                            {slot.dentistName.split(' ')[1]}
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
+                          {slot.dentistName.split(' ')[1]}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
               </div>
             </div>
           )}
@@ -696,7 +774,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                   We look forward to welcoming you!
                 </h3>
                 <p className="text-sm text-slate-600 mt-1">
-                  A confirmation email and SMS reminder have been dispatched.
+                  Your appointment has been successfully saved. We’ll contact you using the details you provided regarding your booking.
                 </p>
               </div>
 
