@@ -457,6 +457,200 @@ app.get('/api/availability', async (req, res) => {
   }
 });
 
+type DatabaseConnection = Awaited<
+  ReturnType<ReturnType<typeof getPool>['getConnection']>
+>;
+
+type AppointmentSlotValidation =
+  | {
+      valid: true;
+      service: DatabaseRow;
+      status: Appointment['status'];
+      slotEnd: number;
+    }
+  | {
+      valid: false;
+      statusCode: 400 | 409;
+      message: string;
+    };
+
+async function validateAppointmentSlot(
+  connection: DatabaseConnection,
+  serviceId: string,
+  dentistId: string,
+  date: string,
+  startTime: string,
+  slotStart: number
+): Promise<AppointmentSlotValidation> {
+  const [dentistRows] = await connection.query<DatabaseRow[]>(
+    `SELECT id
+     FROM dentists
+     WHERE id = ? AND active = 1
+     FOR UPDATE`,
+    [dentistId]
+  );
+
+  if (dentistRows.length === 0) {
+    return {
+      valid: false,
+      statusCode: 400,
+      message: 'The selected dentist is unavailable.',
+    };
+  }
+
+  const [serviceRows] = await connection.query<DatabaseRow[]>(
+    `SELECT id, duration_minutes, buffer_minutes, price
+     FROM services
+     WHERE id = ? AND active = 1
+     LIMIT 1`,
+    [serviceId]
+  );
+
+  if (serviceRows.length === 0) {
+    return {
+      valid: false,
+      statusCode: 400,
+      message: 'The selected service is unavailable.',
+    };
+  }
+
+  const service = serviceRows[0];
+  const duration = Number(service.duration_minutes);
+  const serviceBuffer = Number(service.buffer_minutes);
+
+  if (!Number.isFinite(duration) || duration <= 0) {
+    throw new Error('The selected service has an invalid duration.');
+  }
+
+  const [assignmentRows] = await connection.query<DatabaseRow[]>(
+    `SELECT dentist_id
+     FROM dentist_services
+     WHERE dentist_id = ? AND service_id = ?
+     LIMIT 1`,
+    [dentistId, serviceId]
+  );
+
+  if (assignmentRows.length === 0) {
+    return {
+      valid: false,
+      statusCode: 400,
+      message: 'The selected dentist does not offer this service.',
+    };
+  }
+
+  const [settingsRows] = await connection.query<DatabaseRow[]>(
+    `SELECT auto_confirm_appointments, default_buffer_minutes
+     FROM clinic_settings
+     WHERE id = 1
+     LIMIT 1`
+  );
+  const settings = settingsRows[0];
+  const buffer = serviceBuffer || Number(settings?.default_buffer_minutes) || 15;
+  const status: Appointment['status'] = Number(settings?.auto_confirm_appointments)
+    ? 'confirmed'
+    : 'pending';
+
+  const [scheduleRows] = await connection.query<DatabaseRow[]>(
+    `SELECT start_time, end_time,
+            break_start_time, break_end_time, is_working_day
+     FROM working_hours
+     WHERE dentist_id = ? AND day_of_week = ?
+     LIMIT 1`,
+    [dentistId, getDayOfWeek(date)]
+  );
+  const schedule = scheduleRows[0];
+
+  if (!schedule || Number(schedule.is_working_day) !== 1) {
+    return {
+      valid: false,
+      statusCode: 409,
+      message: 'The selected dentist does not work on this date.',
+    };
+  }
+
+  const workStart = timeToMinutes(String(schedule.start_time));
+  const workEnd = timeToMinutes(String(schedule.end_time));
+  const slotEnd = slotStart + duration;
+
+  if (
+    slotStart < workStart ||
+    slotEnd > workEnd ||
+    (slotStart - workStart) % 30 !== 0
+  ) {
+    return {
+      valid: false,
+      statusCode: 409,
+      message: 'The selected time is outside the dentist’s available appointment slots.',
+    };
+  }
+
+  if (
+    schedule.break_start_time != null &&
+    schedule.break_end_time != null
+  ) {
+    const breakStart = timeToMinutes(String(schedule.break_start_time));
+    const breakEnd = timeToMinutes(String(schedule.break_end_time));
+
+    if (slotStart < breakEnd && slotEnd > breakStart) {
+      return {
+        valid: false,
+        statusCode: 409,
+        message: 'The selected time overlaps the dentist’s break.',
+      };
+    }
+  }
+
+  const [timeOffRows] = await connection.query<DatabaseRow[]>(
+    `SELECT id
+     FROM time_off
+     WHERE dentist_id = ?
+       AND start_date <= ?
+       AND end_date >= ?
+     LIMIT 1`,
+    [dentistId, date, date]
+  );
+
+  if (timeOffRows.length > 0) {
+    return {
+      valid: false,
+      statusCode: 409,
+      message: 'The selected dentist is unavailable on this date.',
+    };
+  }
+
+  const [existingAppointments] = await connection.query<DatabaseRow[]>(
+    `SELECT a.start_time, a.end_time,
+            COALESCE(s.buffer_minutes, 0) AS existing_buffer
+     FROM appointments a
+     INNER JOIN services s ON s.id = a.service_id
+     WHERE a.dentist_id = ?
+       AND a.appointment_date = ?
+       AND a.status NOT IN ('cancelled', 'rescheduled')`,
+    [dentistId, date]
+  );
+
+  const hasConflict = existingAppointments.some((appointment) => {
+    const existingStart = timeToMinutes(
+      String(appointment.start_time).slice(0, 5)
+    );
+    const existingEnd =
+      timeToMinutes(String(appointment.end_time).slice(0, 5)) +
+      Number(appointment.existing_buffer);
+    const newEnd = slotEnd + buffer;
+
+    return slotStart < existingEnd && newEnd > existingStart;
+  });
+
+  if (hasConflict) {
+    return {
+      valid: false,
+      statusCode: 409,
+      message: 'This appointment slot has just been booked. Please select another time.',
+    };
+  }
+
+  return { valid: true, service, status, slotEnd };
+}
 
 app.post('/api/appointments', async (req, res) => {
   let connection: Awaited<ReturnType<ReturnType<typeof getPool>['getConnection']>> | null = null;
@@ -533,199 +727,24 @@ app.post('/api/appointments', async (req, res) => {
     connection = await getPool().getConnection();
     await connection.beginTransaction();
 
-    // 3. Lock the selected dentist to prevent simultaneous bookings.
-    const [dentistRows] = await connection.query<DatabaseRow[]>(
-      `SELECT id
-       FROM dentists
-       WHERE id = ? AND active = 1
-       FOR UPDATE`,
-      [dentistId]
+    const slotValidation = await validateAppointmentSlot(
+      connection,
+      serviceId,
+      dentistId,
+      date,
+      startTime,
+      slotStart
     );
 
-    if (dentistRows.length === 0) {
+    if (!slotValidation.valid) {
       await connection.rollback();
-      res.status(400).json({
-        message: 'The selected dentist is unavailable.',
+      res.status(slotValidation.statusCode).json({
+        message: slotValidation.message,
       });
       return;
     }
 
-    // 4. Verify that the service is active.
-    const [serviceRows] = await connection.query<DatabaseRow[]>(
-      `SELECT id, duration_minutes, buffer_minutes, price
-       FROM services
-       WHERE id = ? AND active = 1
-       LIMIT 1`,
-      [serviceId]
-    );
-
-    if (serviceRows.length === 0) {
-      await connection.rollback();
-      res.status(400).json({
-        message: 'The selected service is unavailable.',
-      });
-      return;
-    }
-
-    const service = serviceRows[0];
-    const duration = Number(service.duration_minutes);
-    const serviceBuffer = Number(service.buffer_minutes);
-
-    if (!Number.isFinite(duration) || duration <= 0) {
-      throw new Error('The selected service has an invalid duration.');
-    }
-
-    // 5. Verify that the dentist offers this service.
-    const [assignmentRows] = await connection.query<DatabaseRow[]>(
-      `SELECT dentist_id
-       FROM dentist_services
-       WHERE dentist_id = ? AND service_id = ?
-       LIMIT 1`,
-      [dentistId, serviceId]
-    );
-
-    if (assignmentRows.length === 0) {
-      await connection.rollback();
-      res.status(400).json({
-        message: 'The selected dentist does not offer this service.',
-      });
-      return;
-    }
-
-    // 6. Retrieve the clinic settings.
-    const [settingsRows] = await connection.query<DatabaseRow[]>(
-      `SELECT auto_confirm_appointments, default_buffer_minutes
-       FROM clinic_settings
-       WHERE id = 1
-       LIMIT 1`
-    );
-
-    const settingsRow = settingsRows[0];
-
-    const defaultBuffer = Number(
-      settingsRow?.default_buffer_minutes
-    ) || 15;
-
-    const buffer = serviceBuffer || defaultBuffer;
-
-    const status = Number(settingsRow?.auto_confirm_appointments)
-      ? 'confirmed'
-      : 'pending';
-
-    // 7. Verify the dentist's working hours.
-    const [scheduleRows] = await connection.query<DatabaseRow[]>(
-      `SELECT start_time, end_time,
-              break_start_time, break_end_time, is_working_day
-       FROM working_hours
-       WHERE dentist_id = ? AND day_of_week = ?
-       LIMIT 1`,
-      [dentistId, getDayOfWeek(date)]
-    );
-
-    const schedule = scheduleRows[0];
-
-    if (!schedule || Number(schedule.is_working_day) !== 1) {
-      await connection.rollback();
-      res.status(409).json({
-        message: 'The selected dentist does not work on this date.',
-      });
-      return;
-    }
-
-    const workStart = timeToMinutes(String(schedule.start_time));
-    const workEnd = timeToMinutes(String(schedule.end_time));
-    const slotEnd = slotStart + duration;
-
-    if (
-      slotStart < workStart ||
-      slotEnd > workEnd ||
-      (slotStart - workStart) % 30 !== 0
-    ) {
-      await connection.rollback();
-      res.status(409).json({
-        message: 'The selected time is outside the dentist’s available appointment slots.',
-      });
-      return;
-    }
-
-    // 8. Check the dentist's scheduled break.
-    if (
-      schedule.break_start_time != null &&
-      schedule.break_end_time != null
-    ) {
-      const breakStart = timeToMinutes(
-        String(schedule.break_start_time)
-      );
-      const breakEnd = timeToMinutes(
-        String(schedule.break_end_time)
-      );
-
-      if (slotStart < breakEnd && slotEnd > breakStart) {
-        await connection.rollback();
-        res.status(409).json({
-          message: 'The selected time overlaps the dentist’s break.',
-        });
-        return;
-      }
-    }
-
-    // 9. Check whether the dentist has time off.
-    const [timeOffRows] = await connection.query<DatabaseRow[]>(
-      `SELECT id
-       FROM time_off
-       WHERE dentist_id = ?
-         AND start_date <= ?
-         AND end_date >= ?
-       LIMIT 1`,
-      [dentistId, date, date]
-    );
-
-    if (timeOffRows.length > 0) {
-      await connection.rollback();
-      res.status(409).json({
-        message: 'The selected dentist is unavailable on this date.',
-      });
-      return;
-    }
-
-    // 10. Recheck existing appointments while holding the dentist lock.
-    const [existingAppointments] =
-      await connection.query<DatabaseRow[]>(
-        `SELECT a.start_time, a.end_time,
-                COALESCE(s.buffer_minutes, 0) AS existing_buffer
-         FROM appointments a
-         INNER JOIN services s ON s.id = a.service_id
-         WHERE a.dentist_id = ?
-           AND a.appointment_date = ?
-           AND a.status NOT IN ('cancelled', 'rescheduled')`,
-        [dentistId, date]
-      );
-
-    const hasConflict = existingAppointments.some((appointment) => {
-      const existingStart = timeToMinutes(
-        String(appointment.start_time).slice(0, 5)
-      );
-
-      const existingEnd =
-        timeToMinutes(
-          String(appointment.end_time).slice(0, 5)
-        ) + Number(appointment.existing_buffer);
-
-      const newEnd = slotEnd + buffer;
-
-      return (
-        slotStart < existingEnd &&
-        newEnd > existingStart
-      );
-    });
-
-    if (hasConflict) {
-      await connection.rollback();
-      res.status(409).json({
-        message: 'This appointment slot has just been booked. Please select another time.',
-      });
-      return;
-    }
+    const { service, status, slotEnd } = slotValidation;
 
     // 11. Create the patient record.
     const patientId = randomUUID();
@@ -842,6 +861,188 @@ app.post('/api/appointments', async (req, res) => {
 
     res.status(500).json({
       message: 'Unable to complete the appointment booking. Please try again.',
+    });
+  } finally {
+    connection?.release();
+  }
+});
+
+app.post('/api/admin/walk-in-appointments', async (req, res) => {
+  let connection: DatabaseConnection | null = null;
+
+  try {
+    const body = req.body as Record<string, unknown>;
+    const serviceId = String(body.serviceId || '').trim();
+    const dentistId = String(body.dentistId || '').trim();
+    const date = String(body.date || '').trim();
+    const startTime = String(body.startTime || '').trim();
+    const firstName = String(body.firstName || '').trim();
+    const lastName = String(body.lastName || '').trim();
+    const phone = String(body.phone || '').trim();
+
+    if (
+      !serviceId ||
+      !dentistId ||
+      !isValidDate(date) ||
+      !/^\d{2}:\d{2}$/.test(startTime) ||
+      firstName.length < 2 ||
+      lastName.length < 2 ||
+      phone.length < 7
+    ) {
+      res.status(400).json({
+        message: 'Please provide valid appointment details, patient name, and phone number.',
+      });
+      return;
+    }
+
+    const requestedDate = new Date(`${date}T00:00:00`);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (requestedDate < today) {
+      res.status(400).json({
+        message: 'Appointments cannot be booked for a past date.',
+      });
+      return;
+    }
+
+    const slotStart = timeToMinutes(startTime);
+
+    if (
+      slotStart < 0 ||
+      slotStart >= 1440 ||
+      Number(startTime.slice(3, 5)) > 59
+    ) {
+      res.status(400).json({
+        message: 'The selected appointment time is invalid.',
+      });
+      return;
+    }
+
+    connection = await getPool().getConnection();
+    await connection.beginTransaction();
+
+    const slotValidation = await validateAppointmentSlot(
+      connection,
+      serviceId,
+      dentistId,
+      date,
+      startTime,
+      slotStart
+    );
+
+    if (!slotValidation.valid) {
+      await connection.rollback();
+      res.status(slotValidation.statusCode).json({
+        message: slotValidation.message,
+      });
+      return;
+    }
+
+    const { service, status, slotEnd } = slotValidation;
+    const patientId = randomUUID();
+    const appointmentId = randomUUID();
+    const bookingReference =
+      `ORL-${randomBytes(4).toString('hex').toUpperCase()}`;
+    const now = new Date();
+    const patientEmail = `walkin.${randomUUID()}@clinic-guest.com`;
+    const endTime = minutesToTime(slotEnd);
+    const patientNotes = 'Walk-in / Phone reception booking';
+
+    await connection.query<ResultSetHeader>(
+      `INSERT INTO patients (
+        id, user_id, first_name, last_name, email, phone,
+        date_of_birth, insurance_provider, preferred_dentist_id, created_at
+      ) VALUES (?, NULL, ?, ?, ?, ?, '1990-01-01', ?, ?, ?)`,
+      [
+        patientId,
+        firstName,
+        lastName,
+        patientEmail,
+        phone,
+        'Self-Pay / In-Clinic',
+        dentistId,
+        now,
+      ]
+    );
+
+    await connection.query<ResultSetHeader>(
+      `INSERT INTO appointments (
+        id, booking_reference, patient_id, dentist_id,
+        service_id, appointment_date, start_time, end_time,
+        status, patient_notes, is_walk_in, total_price,
+        created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE, ?, ?, ?)`,
+      [
+        appointmentId,
+        bookingReference,
+        patientId,
+        dentistId,
+        serviceId,
+        date,
+        startTime,
+        endTime,
+        status,
+        patientNotes,
+        Number(service.price),
+        now,
+        now,
+      ]
+    );
+
+    await connection.query<ResultSetHeader>(
+      `INSERT INTO audit_logs (
+        id, entity_type, entity_id, action,
+        performed_by, details, created_at
+      ) VALUES (?, 'appointment', ?, 'create', ?, ?, ?)`,
+      [
+        randomUUID(),
+        appointmentId,
+        'Clinic Reception Desk',
+        JSON.stringify({
+          bookingReference,
+          patientId,
+          serviceId,
+          dentistId,
+          date,
+          startTime,
+          endTime,
+          status,
+          isWalkIn: true,
+        }),
+        now,
+      ]
+    );
+
+    await connection.commit();
+
+    res.status(201).json({
+      message: 'Walk-in appointment successfully booked.',
+      appointment: {
+        id: appointmentId,
+        bookingReference,
+        patientId,
+        dentistId,
+        serviceId,
+        date,
+        startTime,
+        endTime,
+        status,
+        patientNotes,
+        isWalkIn: true,
+        totalPrice: Number(service.price),
+        createdAt: now.toISOString(),
+        updatedAt: now.toISOString(),
+      } satisfies Appointment,
+    });
+  } catch (error) {
+    if (connection) {
+      await connection.rollback();
+    }
+
+    console.error('Failed to create walk-in appointment:', error);
+    res.status(500).json({
+      message: 'Unable to create the walk-in appointment. Please try again.',
     });
   } finally {
     connection?.release();

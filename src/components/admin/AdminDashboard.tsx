@@ -74,6 +74,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [walkInLastName, setWalkInLastName] = useState<string>('');
   const [walkInPhone, setWalkInPhone] = useState<string>('');
   const [walkInError, setWalkInError] = useState<string | null>(null);
+  const [isWalkInSubmitting, setIsWalkInSubmitting] = useState<boolean>(false);
 
   // Status notes modal
   const [statusActionModal, setStatusActionModal] = useState<{
@@ -186,41 +187,55 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
 
   // Handle walk-in creation
-  const handleCreateWalkIn = () => {
+  const handleCreateWalkIn = async () => {
+    if (isWalkInSubmitting) return;
+
     setWalkInError(null);
     if (!walkInFirstName.trim() || !walkInLastName.trim() || !walkInPhone.trim()) {
       setWalkInError('Patient name and phone number are required.');
       return;
     }
 
-    const res = DentalStorage.bookAppointment({
-      serviceId: walkInServiceId,
-      dentistId: walkInDentistId,
-      date: walkInDate,
-      startTime: walkInTime,
-      patientInfo: {
-        firstName: walkInFirstName.trim(),
-        lastName: walkInLastName.trim(),
-        email: `walkin.${Date.now()}@clinic-guest.com`,
-        phone: walkInPhone.trim(),
-        dateOfBirth: '1990-01-01',
-        insuranceProvider: 'Self-Pay / In-Clinic',
-      },
-      patientNotes: 'Walk-in / Phone reception booking',
-      isWalkIn: true,
-      bookedBy: 'Clinic Reception Desk',
-    });
+    setIsWalkInSubmitting(true);
 
-    if (!res.success) {
-      setWalkInError(res.error || 'Conflict detected for walk-in slot.');
-      return;
+    try {
+      const response = await fetch('/api/admin/walk-in-appointments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          serviceId: walkInServiceId,
+          dentistId: walkInDentistId,
+          date: walkInDate,
+          startTime: walkInTime,
+          firstName: walkInFirstName.trim(),
+          lastName: walkInLastName.trim(),
+          phone: walkInPhone.trim(),
+        }),
+      });
+
+      const data: { message?: string } = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to create walk-in appointment.');
+      }
+
+      setIsWalkInModalOpen(false);
+      setWalkInFirstName('');
+      setWalkInLastName('');
+      setWalkInPhone('');
+      onRefreshData();
+    } catch (error) {
+      console.error('Failed to create walk-in appointment:', error);
+      setWalkInError(
+        error instanceof Error
+          ? error.message
+          : 'Unable to create the walk-in appointment. Please try again.'
+      );
+    } finally {
+      setIsWalkInSubmitting(false);
     }
-
-    setIsWalkInModalOpen(false);
-    setWalkInFirstName('');
-    setWalkInLastName('');
-    setWalkInPhone('');
-    onRefreshData();
   };
 
   // Add time-off
@@ -1177,9 +1192,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <button
                     type="button"
                     onClick={handleCreateWalkIn}
+                    disabled={isWalkInSubmitting}
                     className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-semibold"
                   >
-                    Book Walk-In
+                    {isWalkInSubmitting ? 'Booking...' : 'Book Walk-In'}
                   </button>
                 </div>
               </div>
