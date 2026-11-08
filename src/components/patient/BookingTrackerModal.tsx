@@ -12,7 +12,7 @@ import {
   ChevronRight,
   ShieldAlert,
 } from 'lucide-react';
-import { Appointment, DentalService, Dentist, ClinicSettings } from '../../types';
+import { Appointment, DentalService, Dentist, ClinicSettings, Patient } from '../../types';
 import { DentalStorage, formatDateReadable } from '../../services/storage';
 
 interface BookingTrackerModalProps {
@@ -23,6 +23,8 @@ interface BookingTrackerModalProps {
   dentists: Dentist[];
   settings: ClinicSettings;
   onRefreshData: () => void;
+  authenticatedPatient?: Patient | null;
+  patientAppointments?: Appointment[];
 }
 
 export const BookingTrackerModal: React.FC<BookingTrackerModalProps> = ({
@@ -33,6 +35,8 @@ export const BookingTrackerModal: React.FC<BookingTrackerModalProps> = ({
   dentists,
   settings,
   onRefreshData,
+  authenticatedPatient = null,
+  patientAppointments = [],
 }) => {
   const [searchTerm, setSearchTerm] = useState<string>(initialReference || '');
   const [foundAppointment, setFoundAppointment] = useState<Appointment | null>(null);
@@ -45,6 +49,9 @@ export const BookingTrackerModal: React.FC<BookingTrackerModalProps> = ({
   const [selectedRescheduleSlot, setSelectedRescheduleSlot] = useState<{ time: string; dentistId: string } | null>(null);
   const [rescheduleReason, setRescheduleReason] = useState<string>('');
   const [rescheduleError, setRescheduleError] = useState<string | null>(null);
+  const [cancelError, setCancelError] = useState<string | null>(null);
+  const [isSavingAppointment, setIsSavingAppointment] = useState(false);
+  const [isLoadingRescheduleSlots, setIsLoadingRescheduleSlots] = useState(false);
 
   // Cancel state
   const [isCancelling, setIsCancelling] = useState<boolean>(false);
@@ -67,6 +74,21 @@ export const BookingTrackerModal: React.FC<BookingTrackerModalProps> = ({
     setSearchError(null);
     setIsRescheduling(false);
     setIsCancelling(false);
+
+    if (authenticatedPatient) {
+      const appointment = patientAppointments.find(
+        (item) =>
+          item.bookingReference.toLowerCase() === term.toLowerCase()
+      );
+      if (appointment) {
+        setFoundAppointment(appointment);
+        return;
+      }
+
+      setFoundAppointment(null);
+      setSearchError('No appointment found with that booking reference in your account.');
+      return;
+    }
 
     // First try exact booking reference
     let apt = DentalStorage.getAppointmentByReference(term);
@@ -100,15 +122,51 @@ export const BookingTrackerModal: React.FC<BookingTrackerModalProps> = ({
 
   const currentService = foundAppointment ? services.find((s) => s.id === foundAppointment.serviceId) : null;
   const currentDentist = foundAppointment ? dentists.find((d) => d.id === foundAppointment.dentistId) : null;
-  const patient = foundAppointment ? DentalStorage.getPatientById(foundAppointment.patientId) : null;
+  const patient = foundAppointment
+    ? authenticatedPatient || DentalStorage.getPatientById(foundAppointment.patientId)
+    : null;
 
   // Compute available slots when reschedule date is chosen
-  const handleRescheduleDateChange = (date: string) => {
+  const handleRescheduleDateChange = async (date: string) => {
     setRescheduleDate(date);
     setSelectedRescheduleSlot(null);
     setRescheduleError(null);
+    setRescheduleSlots([]);
 
     if (!foundAppointment || !currentService) return;
+
+    if (authenticatedPatient) {
+      setIsLoadingRescheduleSlots(true);
+      try {
+        const params = new URLSearchParams({
+          serviceId: currentService.id,
+          dentistId: foundAppointment.dentistId,
+          date,
+          excludeAppointmentId: foundAppointment.id,
+        });
+        const response = await fetch(`/api/availability?${params.toString()}`, {
+          credentials: 'include',
+        });
+        const result: {
+          slots?: { time: string; dentistId: string; dentistName: string }[];
+          message?: string;
+        } = await response.json();
+        if (!response.ok || !result.slots) {
+          throw new Error(result.message || 'Unable to load available appointment times.');
+        }
+        setRescheduleSlots(result.slots);
+      } catch (error) {
+        console.error('Failed to load rescheduling availability:', error);
+        setRescheduleError(
+          error instanceof Error
+            ? error.message
+            : 'Unable to load available appointment times.'
+        );
+      } finally {
+        setIsLoadingRescheduleSlots(false);
+      }
+      return;
+    }
 
     const slots = DentalStorage.getAvailableSlots({
       serviceId: currentService.id,
@@ -118,8 +176,50 @@ export const BookingTrackerModal: React.FC<BookingTrackerModalProps> = ({
     setRescheduleSlots(slots);
   };
 
-  const handleConfirmReschedule = () => {
+  const handleConfirmReschedule = async () => {
     if (!foundAppointment || !selectedRescheduleSlot || !rescheduleDate) return;
+
+    if (authenticatedPatient) {
+      setRescheduleError(null);
+      setIsSavingAppointment(true);
+      try {
+        const response = await fetch(
+          `/api/patient/appointments/${encodeURIComponent(foundAppointment.id)}/reschedule`,
+          {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              date: rescheduleDate,
+              startTime: selectedRescheduleSlot.time,
+              dentistId: selectedRescheduleSlot.dentistId,
+              reason: rescheduleReason,
+            }),
+          }
+        );
+        const result: {
+          appointment?: Partial<Appointment>;
+          message?: string;
+        } = await response.json();
+        if (!response.ok || !result.appointment) {
+          throw new Error(result.message || 'Failed to reschedule the appointment.');
+        }
+
+        setFoundAppointment((current) =>
+          current ? { ...current, ...result.appointment } : current
+        );
+        setIsRescheduling(false);
+        onRefreshData();
+      } catch (error) {
+        console.error('Failed to reschedule patient appointment:', error);
+        setRescheduleError(
+          error instanceof Error ? error.message : 'Failed to reschedule the appointment.'
+        );
+      } finally {
+        setIsSavingAppointment(false);
+      }
+      return;
+    }
 
     const res = DentalStorage.rescheduleAppointment(
       foundAppointment.id,
@@ -142,8 +242,45 @@ export const BookingTrackerModal: React.FC<BookingTrackerModalProps> = ({
     onRefreshData();
   };
 
-  const handleConfirmCancel = () => {
+  const handleConfirmCancel = async () => {
     if (!foundAppointment) return;
+
+    if (authenticatedPatient) {
+      setCancelError(null);
+      setIsSavingAppointment(true);
+      try {
+        const response = await fetch(
+          `/api/patient/appointments/${encodeURIComponent(foundAppointment.id)}/cancel`,
+          {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reason: cancelReason }),
+          }
+        );
+        const result: {
+          appointment?: Partial<Appointment>;
+          message?: string;
+        } = await response.json();
+        if (!response.ok || !result.appointment) {
+          throw new Error(result.message || 'Failed to cancel the appointment.');
+        }
+
+        setFoundAppointment((current) =>
+          current ? { ...current, ...result.appointment } : current
+        );
+        setIsCancelling(false);
+        onRefreshData();
+      } catch (error) {
+        console.error('Failed to cancel patient appointment:', error);
+        setCancelError(
+          error instanceof Error ? error.message : 'Failed to cancel the appointment.'
+        );
+      } finally {
+        setIsSavingAppointment(false);
+      }
+      return;
+    }
 
     DentalStorage.cancelAppointment(
       foundAppointment.id,
@@ -203,14 +340,20 @@ export const BookingTrackerModal: React.FC<BookingTrackerModalProps> = ({
           {/* Lookup Input */}
           <div className="space-y-2">
             <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider block">
-              Enter Booking Reference or Contact Phone / Email
+              {authenticatedPatient
+                ? 'Enter Your Booking Reference'
+                : 'Enter Booking Reference or Contact Phone / Email'}
             </label>
             <div className="flex flex-col sm:flex-row gap-2">
               <div className="relative flex-1">
                 <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
                 <input
                   type="text"
-                  placeholder="e.g. ORL-2026-7812 or claire.montague@example.com"
+                  placeholder={
+                    authenticatedPatient
+                      ? 'e.g. ORL-2026-7812'
+                      : 'e.g. ORL-2026-7812 or claire.montague@example.com'
+                  }
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -231,7 +374,7 @@ export const BookingTrackerModal: React.FC<BookingTrackerModalProps> = ({
           </div>
 
           {/* Quick Demo Shortcuts */}
-          {!foundAppointment && (
+          {!foundAppointment && !authenticatedPatient && (
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 space-y-2">
               <span className="font-semibold text-slate-800 block">Try inspecting sample bookings:</span>
               <div className="flex flex-wrap gap-2">
@@ -326,13 +469,13 @@ export const BookingTrackerModal: React.FC<BookingTrackerModalProps> = ({
               </div>
 
               {/* Action Buttons (Reschedule / Cancel) */}
-              {foundAppointment.status !== 'cancelled' && foundAppointment.status !== 'completed' && !isRescheduling && !isCancelling && (
+              {['pending', 'confirmed'].includes(foundAppointment.status) && !isRescheduling && !isCancelling && (
                 <div className="flex flex-wrap items-center gap-3">
                   <button
                     type="button"
                     onClick={() => {
                       setIsRescheduling(true);
-                      handleRescheduleDateChange(foundAppointment.date);
+                      void handleRescheduleDateChange(foundAppointment.date);
                     }}
                     className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg transition-colors"
                   >
@@ -342,7 +485,10 @@ export const BookingTrackerModal: React.FC<BookingTrackerModalProps> = ({
 
                   <button
                     type="button"
-                    onClick={() => setIsCancelling(true)}
+                    onClick={() => {
+                      setCancelError(null);
+                      setIsCancelling(true);
+                    }}
                     className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold rounded-lg border border-rose-200 transition-colors"
                   >
                     <ShieldAlert className="w-3.5 h-3.5" />
@@ -384,7 +530,9 @@ export const BookingTrackerModal: React.FC<BookingTrackerModalProps> = ({
 
                   <div>
                     <label className="text-xs font-semibold text-slate-700 block mb-1">Available Slots</label>
-                    {rescheduleSlots.length === 0 ? (
+                    {isLoadingRescheduleSlots ? (
+                      <p className="text-xs text-slate-500 italic">Loading available slots...</p>
+                    ) : rescheduleSlots.length === 0 ? (
                       <p className="text-xs text-slate-500 italic">No open slots on selected date.</p>
                     ) : (
                       <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-36 overflow-y-auto pr-1">
@@ -423,11 +571,11 @@ export const BookingTrackerModal: React.FC<BookingTrackerModalProps> = ({
                   <div className="flex gap-2 pt-2">
                     <button
                       type="button"
-                      disabled={!selectedRescheduleSlot}
+                      disabled={!selectedRescheduleSlot || isSavingAppointment || isLoadingRescheduleSlots}
                       onClick={handleConfirmReschedule}
                       className="px-4 py-2 bg-teal-600 hover:bg-teal-700 disabled:opacity-40 text-white text-xs font-semibold rounded-lg transition-colors"
                     >
-                      Save Rescheduled Time
+                      {isSavingAppointment ? 'Saving...' : 'Save Rescheduled Time'}
                     </button>
                     <button
                       type="button"
@@ -448,6 +596,12 @@ export const BookingTrackerModal: React.FC<BookingTrackerModalProps> = ({
                     Are you sure you wish to cancel this appointment? Your reserved clinical operatory slot will be released back into the booking calendar immediately.
                   </p>
 
+                  {cancelError && (
+                    <div className="p-3 rounded-lg bg-white text-rose-800 text-xs border border-rose-200">
+                      {cancelError}
+                    </div>
+                  )}
+
                   <div>
                     <label className="text-xs font-semibold text-rose-900 block mb-1">Reason for cancellation</label>
                     <select
@@ -466,10 +620,11 @@ export const BookingTrackerModal: React.FC<BookingTrackerModalProps> = ({
                   <div className="flex gap-2 pt-2">
                     <button
                       type="button"
+                      disabled={isSavingAppointment}
                       onClick={handleConfirmCancel}
-                      className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-lg transition-colors"
+                      className="px-4 py-2 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white text-xs font-semibold rounded-lg transition-colors"
                     >
-                      Confirm & Release Slot
+                      {isSavingAppointment ? 'Cancelling...' : 'Confirm & Release Slot'}
                     </button>
                     <button
                       type="button"

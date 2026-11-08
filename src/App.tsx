@@ -13,6 +13,7 @@ import { ClinicPoliciesSection } from './components/patient/ClinicPoliciesSectio
 import { BookingModal } from './components/patient/BookingModal';
 import { BookingTrackerModal } from './components/patient/BookingTrackerModal';
 import { PatientPortal } from './components/patient/PatientPortal';
+import { PatientAuthModal } from './components/patient/PatientAuthModal';
 import { ClinicFAQModal } from './components/patient/ClinicFAQModal';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { DentistPortal } from './components/dentist/DentistPortal';
@@ -24,6 +25,8 @@ import {
   Dentist,
   Patient,
   ClinicSettings,
+  TimeOff,
+  WorkingHours,
 } from './types';
 
 interface ClinicDataResponse {
@@ -32,6 +35,14 @@ interface ClinicDataResponse {
   settings: ClinicSettings;
   appointments: Appointment[];
   patients: Patient[];
+  workingHours: WorkingHours[];
+  timeOff: TimeOff[];
+}
+
+interface CurrentAccount {
+  id: string;
+  email: string;
+  role: UserRole;
 }
 
 export default function App() {
@@ -48,49 +59,35 @@ export default function App() {
     DentalStorage.getSettings()
   );
 
-  // Appointments and patients loaded from MySQL
-  const [appointments, setAppointments] = useState<Appointment[]>(() =>
-    DentalStorage.getAppointments()
-  );
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [patients, setPatients] = useState<Patient[]>([]);
 
-  const [patients, setPatients] = useState<Patient[]>(() =>
-    DentalStorage.getPatients()
-  );
+  const [workingHours, setWorkingHours] = useState<WorkingHours[]>([]);
+  const [timeOff, setTimeOff] = useState<TimeOff[]>([]);
+  const [currentAccount, setCurrentAccount] = useState<CurrentAccount | null>(null);
+  const [currentPatient, setCurrentPatient] = useState<Patient | null>(null);
+  const [isRestoringSession, setIsRestoringSession] = useState(true);
+  const [isPatientAuthModalOpen, setIsPatientAuthModalOpen] = useState(false);
 
-  // Load clinic data from MySQL
-  const loadClinicData = async () => {
+  const loadPublicClinicData = async () => {
     try {
-      const response = await fetch('/api/clinic-data');
+      const response = await fetch('/api/public/clinic-data', {
+        credentials: 'include',
+      });
 
       if (!response.ok) {
-        throw new Error(`Failed to load clinic data (${response.status})`);
+        throw new Error(`Failed to load public clinic data (${response.status})`);
       }
 
-      const data: ClinicDataResponse = await response.json();
+      const data: Partial<ClinicDataResponse> = await response.json();
 
-      setServices(data.services);
-      setDentists(data.dentists);
-      setSettings(data.settings);
-
-      setAppointments(data.appointments);
-      setPatients(data.patients);
-
-      console.log('Clinic data successfully loaded from MySQL.');
+      if (data.services) setServices(data.services);
+      if (data.dentists) setDentists(data.dentists);
+      if (data.settings) setSettings(data.settings);
+      if (data.workingHours) setWorkingHours(data.workingHours);
     } catch (error) {
-      console.error('Error loading clinic data:', error);
+      console.error('Error loading public clinic data:', error);
     }
-  };
-
-  // Initialize local storage for components not yet migrated,
-  // then retrieve the latest shared data from MySQL.
-  useEffect(() => {
-    DentalStorage.init();
-    void loadClinicData();
-  }, []);
-
-  // Refresh shared clinic data after bookings or other changes
-  const handleRefreshData = () => {
-    void loadClinicData();
   };
 
   // Active role & view state
@@ -107,8 +104,131 @@ export default function App() {
 
   const [isFAQModalOpen, setIsFAQModalOpen] = useState<boolean>(false);
 
-  // Active patient for portal
-  const [currentPatientId, setCurrentPatientId] = useState<string>('pat-1');
+  const loadAuthenticatedClinicData = async (account: CurrentAccount) => {
+    if (account.role === 'patient') {
+      const [profileResponse, appointmentsResponse] = await Promise.all([
+        fetch('/api/patient/profile', { credentials: 'include' }),
+        fetch('/api/patient/appointments', { credentials: 'include' }),
+      ]);
+      const profileData: { patient?: Patient; message?: string } =
+        await profileResponse.json();
+      const appointmentData: { appointments?: Appointment[]; message?: string } =
+        await appointmentsResponse.json();
+      if (!profileResponse.ok || !profileData.patient) {
+        throw new Error(profileData.message || 'Failed to load the patient profile.');
+      }
+      if (!appointmentsResponse.ok || !appointmentData.appointments) {
+        throw new Error(
+          appointmentData.message || 'Failed to load patient appointments.'
+        );
+      }
+
+      setCurrentPatient(profileData.patient);
+      setPatients([profileData.patient]);
+      setAppointments(appointmentData.appointments);
+      setTimeOff([]);
+      return;
+    }
+
+    const response = await fetch('/api/clinic-data', {
+      credentials: 'include',
+    });
+    const data: ClinicDataResponse & { timeOff: TimeOff[] } = await response.json();
+    if (!response.ok) {
+      throw new Error(`Failed to load authenticated clinic data (${response.status})`);
+    }
+
+    setServices(data.services);
+    setDentists(data.dentists);
+    setSettings(data.settings);
+    setAppointments(data.appointments);
+    setPatients(data.patients);
+    setWorkingHours(data.workingHours);
+    setTimeOff(data.timeOff);
+    setCurrentPatient(null);
+  };
+
+  const restoreSession = async () => {
+    try {
+      const response = await fetch('/api/auth/me', { credentials: 'include' });
+      if (response.status === 401) return;
+      const data: {
+        user?: CurrentAccount;
+        patient?: Patient;
+        message?: string;
+      } = await response.json();
+      if (!response.ok || !data.user) {
+        throw new Error(data.message || 'Unable to restore the account session.');
+      }
+
+      await loadAuthenticatedClinicData(data.user);
+      setCurrentAccount(data.user);
+      setCurrentRole(data.user.role);
+      if (data.patient) setCurrentPatient(data.patient);
+      setActiveView(data.user.role === 'patient' ? 'portal' : data.user.role);
+    } catch (error) {
+      console.error('Unable to restore authenticated session:', error);
+    } finally {
+      setIsRestoringSession(false);
+    }
+  };
+
+  useEffect(() => {
+    DentalStorage.init();
+    void (async () => {
+      await loadPublicClinicData();
+      await restoreSession();
+    })();
+  }, []);
+
+  const handleRefreshData = () => {
+    if (currentAccount) {
+      void loadAuthenticatedClinicData(currentAccount).catch((error: unknown) => {
+        console.error('Error refreshing authenticated clinic data:', error);
+      });
+    } else {
+      void loadPublicClinicData();
+    }
+  };
+
+  const handleAuthenticated = async () => {
+    const response = await fetch('/api/auth/me', { credentials: 'include' });
+    const data: {
+      user?: CurrentAccount;
+      patient?: Patient;
+      message?: string;
+    } = await response.json();
+    if (!response.ok || !data.user) {
+      throw new Error(data.message || 'Unable to load the signed-in account.');
+    }
+
+    await loadAuthenticatedClinicData(data.user);
+    setCurrentAccount(data.user);
+    setCurrentRole(data.user.role);
+    if (data.patient) setCurrentPatient(data.patient);
+    setActiveView(data.user.role === 'patient' ? 'portal' : data.user.role);
+    setIsPatientAuthModalOpen(false);
+  };
+
+  const handleLogout = async () => {
+    const response = await fetch('/api/auth/logout', {
+      method: 'POST',
+      credentials: 'include',
+    });
+    const result: { message?: string } = await response.json();
+    if (!response.ok) {
+      throw new Error(result.message || 'Unable to log out.');
+    }
+
+    setCurrentAccount(null);
+    setCurrentPatient(null);
+    setPatients([]);
+    setAppointments([]);
+    setWorkingHours([]);
+    setTimeOff([]);
+    setCurrentRole('patient');
+    setActiveView('home');
+  };
 
   const handleOpenBooking = (serviceId?: string, dentistId?: string) => {
     setBookingServiceId(serviceId);
@@ -126,6 +246,11 @@ export default function App() {
   };
 
   const handleRoleChange = (role: UserRole) => {
+    if (role !== 'patient' && currentAccount?.role !== role) return;
+    if (role === 'patient' && currentAccount && currentAccount.role !== 'patient') {
+      setActiveView('home');
+      return;
+    }
     setCurrentRole(role);
     if (role === 'admin') setActiveView('admin');
     else if (role === 'dentist') setActiveView('dentist');
@@ -140,12 +265,33 @@ export default function App() {
       <Navbar
         currentRole={currentRole}
         onRoleChange={handleRoleChange}
+        availableRoles={currentAccount ? [currentAccount.role] : ['patient']}
+        isAuthenticated={currentAccount !== null}
+        onLogout={() => {
+          void handleLogout().catch((error: unknown) => {
+            console.error('Unable to log out:', error);
+            window.alert(
+              error instanceof Error ? error.message : 'Unable to log out right now.'
+            );
+          });
+        }}
+        patientAccountLabel={
+          isRestoringSession
+            ? 'Checking session...'
+            : currentAccount?.role === 'patient'
+              ? 'Patient Portal'
+              : 'Patient Account'
+        }
         onOpenBooking={() => handleOpenBooking()}
         onOpenTracker={() => handleOpenTracker()}
         onOpenFAQ={() => setIsFAQModalOpen(true)}
         onOpenPatientPortal={() => {
-          setCurrentRole('patient');
-          setActiveView('portal');
+          if (currentAccount?.role === 'patient') {
+            setCurrentRole('patient');
+            setActiveView('portal');
+          } else {
+            setIsPatientAuthModalOpen(true);
+          }
         }}
         activeView={activeView}
         setActiveView={setActiveView}
@@ -179,16 +325,21 @@ export default function App() {
         )}
 
         {/* PATIENT VIEW: Patient Portal & History */}
-        {activeView === 'portal' && (
+        {activeView === 'portal' &&
+          currentAccount?.role === 'patient' &&
+          currentPatient && (
           <PatientPortal
-            currentPatientId={currentPatientId}
-            onSelectPatient={setCurrentPatientId}
+            patient={currentPatient}
+            appointments={appointments}
             services={services}
             dentists={dentists}
-            settings={settings}
             onOpenBooking={() => handleOpenBooking()}
             onTrackAppointment={(ref) => handleOpenTracker(ref)}
-            onRefreshData={handleRefreshData}
+            onPatientUpdated={(patient) => {
+              setCurrentPatient(patient);
+              setPatients([patient]);
+            }}
+            onLogout={handleLogout}
           />
         )}
 
@@ -200,6 +351,8 @@ export default function App() {
             settings={settings}
             appointments={appointments}
             patients={patients}
+            workingHours={workingHours}
+            timeOffs={timeOff}
             onRefreshData={handleRefreshData}
             onOpenBooking={() => handleOpenBooking()}
           />
@@ -232,6 +385,9 @@ export default function App() {
         onClose={() => setIsBookingModalOpen(false)}
         initialServiceId={bookingServiceId}
         initialDentistId={bookingDentistId}
+        patientProfile={
+          currentAccount?.role === 'patient' ? currentPatient : null
+        }
         services={services}
         dentists={dentists}
         settings={settings}
@@ -248,6 +404,12 @@ export default function App() {
         dentists={dentists}
         settings={settings}
         onRefreshData={handleRefreshData}
+        authenticatedPatient={
+          currentAccount?.role === 'patient' ? currentPatient : null
+        }
+        patientAppointments={
+          currentAccount?.role === 'patient' ? appointments : []
+        }
       />
 
       {/* Clinic FAQ & Guidance Assistant Modal */}
@@ -260,6 +422,12 @@ export default function App() {
           setIsFAQModalOpen(false);
           handleOpenBooking();
         }}
+      />
+
+      <PatientAuthModal
+        isOpen={isPatientAuthModalOpen}
+        onClose={() => setIsPatientAuthModalOpen(false)}
+        onAuthenticated={handleAuthenticated}
       />
     </div>
   );

@@ -10,6 +10,10 @@ interface NavbarProps {
   onOpenTracker: () => void;
   onOpenFAQ: () => void;
   onOpenPatientPortal: () => void;
+  isAuthenticated: boolean;
+  onLogout: () => void;
+  availableRoles: UserRole[];
+  patientAccountLabel: string;
   activeView: 'home' | 'portal' | 'admin' | 'dentist';
   setActiveView: (view: 'home' | 'portal' | 'admin' | 'dentist') => void;
 }
@@ -21,6 +25,10 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenTracker,
   onOpenFAQ,
   onOpenPatientPortal,
+  isAuthenticated,
+  onLogout,
+  availableRoles,
+  patientAccountLabel,
   activeView,
   setActiveView,
 }) => {
@@ -200,7 +208,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors whitespace-nowrap"
             >
               <User className="w-4 h-4 text-slate-500" />
-              <span>Patient Account</span>
+              <span>{patientAccountLabel}</span>
             </button>
             <button
               type="button"
@@ -212,6 +220,15 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className="hidden min-[380px]:inline">Book Appointment</span>
             </button>
             </>
+            )}
+            {isAuthenticated && activeView !== 'portal' && (
+              <button
+                type="button"
+                onClick={onLogout}
+                className="rounded-lg px-3 py-2 text-xs font-semibold text-teal-800 hover:bg-teal-50"
+              >
+                Log out
+              </button>
             )}
           </div>
           
@@ -256,7 +273,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                   { value: 'portal', label: 'Patient Portal' },
                   { value: 'admin', label: 'Admin Dashboard' },
                   { value: 'dentist', label: 'Dentist Portal' },
-                ].map((option) => (
+                ].filter((option) => {
+                  if (option.value === 'admin') return availableRoles.includes('admin');
+                  if (option.value === 'dentist') return availableRoles.includes('dentist');
+                  return true;
+                }).map((option) => (
                   <button
                     key={option.value}
                     type="button"
@@ -267,7 +288,13 @@ export const Navbar: React.FC<NavbarProps> = ({
                         | 'admin'
                         | 'dentist';
 
-                      if (view === 'home' || view === 'portal') {
+                      if (view === 'portal') {
+                        onOpenPatientPortal();
+                        setIsViewMenuOpen(false);
+                        return;
+                      }
+
+                      if (view === 'home') {
                         onRoleChange('patient');
                       } else if (view === 'admin') {
                         onRoleChange('admin');

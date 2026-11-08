@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Calendar,
   Clock,
@@ -14,33 +14,30 @@ import {
   X,
   AlertCircle,
 } from 'lucide-react';
-import { Patient, Appointment, DentalService, Dentist, ClinicSettings } from '../../types';
-import { DentalStorage, formatDateReadable } from '../../services/storage';
+import { Patient, Appointment, DentalService, Dentist } from '../../types';
+import { formatDateReadable } from '../../services/storage';
 
 interface PatientPortalProps {
-  currentPatientId: string;
-  onSelectPatient: (patientId: string) => void;
+  patient: Patient;
+  appointments: Appointment[];
   services: DentalService[];
   dentists: Dentist[];
-  settings: ClinicSettings;
   onOpenBooking: () => void;
   onTrackAppointment: (ref: string) => void;
-  onRefreshData: () => void;
+  onPatientUpdated: (patient: Patient) => void;
+  onLogout: () => Promise<void>;
 }
 
 export const PatientPortal: React.FC<PatientPortalProps> = ({
-  currentPatientId,
-  onSelectPatient,
+  patient: currentPatient,
+  appointments: patientAppointments,
   services,
   dentists,
-  settings,
   onOpenBooking,
   onTrackAppointment,
-  onRefreshData,
+  onPatientUpdated,
+  onLogout,
 }) => {
-  const patients = DentalStorage.getPatients();
-  const currentPatient = patients.find((p) => p.id === currentPatientId) || patients[0];
-
   // Edit profile state
   const [isEditingProfile, setIsEditingProfile] = useState<boolean>(false);
   const [profileForm, setProfileForm] = useState({
@@ -50,26 +47,76 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
     emergencyContactPhone: currentPatient?.emergencyContactPhone || '',
     preferredDentistId: currentPatient?.preferredDentistId || '',
   });
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
+  const [logoutError, setLogoutError] = useState<string | null>(null);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  useEffect(() => {
+    setProfileForm({
+      phone: currentPatient.phone,
+      email: currentPatient.email,
+      emergencyContactName: currentPatient.emergencyContactName || '',
+      emergencyContactPhone: currentPatient.emergencyContactPhone || '',
+      preferredDentistId: currentPatient.preferredDentistId || '',
+    });
+  }, [currentPatient]);
 
   // Save profile changes
-  const handleSaveProfile = () => {
-    if (!currentPatient) return;
-    DentalStorage.findOrCreatePatient({
-      ...currentPatient,
-      phone: profileForm.phone,
-      email: profileForm.email,
-      emergencyContactName: profileForm.emergencyContactName,
-      emergencyContactPhone: profileForm.emergencyContactPhone,
-      preferredDentistId: profileForm.preferredDentistId,
-    });
-    setIsEditingProfile(false);
-    onRefreshData();
+  const handleSaveProfile = async () => {
+    setProfileError(null);
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profileForm.email.trim())) {
+      setProfileError('Enter a valid email address.');
+      return;
+    }
+    if (profileForm.phone.trim().length < 7) {
+      setProfileError('Enter a valid phone number.');
+      return;
+    }
+
+    setIsSavingProfile(true);
+    try {
+      const response = await fetch('/api/patient/profile', {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...profileForm,
+          email: profileForm.email.trim(),
+          phone: profileForm.phone.trim(),
+        }),
+      });
+      const result: { patient?: Patient; message?: string } = await response.json();
+      if (!response.ok || !result.patient) {
+        throw new Error(result.message || 'Unable to save your profile.');
+      }
+
+      onPatientUpdated(result.patient);
+      setIsEditingProfile(false);
+    } catch (error) {
+      console.error('Failed to save patient profile:', error);
+      setProfileError(
+        error instanceof Error ? error.message : 'Unable to save your profile.'
+      );
+    } finally {
+      setIsSavingProfile(false);
+    }
   };
 
-  const allAppointments = DentalStorage.getAppointments();
-  const patientAppointments = currentPatient
-    ? allAppointments.filter((a) => a.patientId === currentPatient.id)
-    : [];
+  const handleLogout = async () => {
+    setLogoutError(null);
+    setIsLoggingOut(true);
+    try {
+      await onLogout();
+    } catch (error) {
+      console.error('Failed to log out:', error);
+      setLogoutError(
+        error instanceof Error ? error.message : 'Unable to log out right now.'
+      );
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
 
   const todayStr = new Date().toISOString().split('T')[0];
   const upcomingAppointments = patientAppointments.filter(
@@ -82,7 +129,7 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
   return (
     <div className="py-10 bg-slate-50 min-h-[calc(100vh-140px)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        {/* Header Strip with Patient Switcher */}
+        {/* Patient account header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 p-4 sm:p-8 rounded-2xl bg-gradient-to-r from-teal-800 via-teal-600 to-teal-400 shadow-[0_8px_24px_rgba(13,148,136,0.20)]">
           <div className="min-w-0">
             <div className="text-xs font-semibold uppercase tracking-wider text-teal-100">
@@ -96,21 +143,11 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
             </p>
           </div>
 
-          {/* Patient Profile Quick Switcher (Demo portfolio helper) */}
+          {/* Authenticated account actions */}
           <div className="flex w-full flex-wrap items-center gap-2 self-start md:w-auto md:self-auto">
-            <span className="text-xs text-teal-50 font-medium">Switch Patient:</span>
-            <select
-              value={currentPatient?.id}
-              onChange={(e) => onSelectPatient(e.target.value)}
-              className="min-w-0 flex-1 md:flex-none bg-white/95 border border-white/50 rounded-lg px-3 py-1.5 text-xs text-teal-900 font-medium focus:ring-2 focus:ring-teal-200 focus:outline-hidden"
-            >
-              {patients.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.firstName} {p.lastName}
-                </option>
-              ))}
-            </select>
-
+            <span className="min-w-0 truncate text-xs font-medium text-teal-50">
+              {currentPatient.email}
+            </span>
             <button
               type="button"
               onClick={onOpenBooking}
@@ -119,8 +156,21 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
               <Plus className="w-3.5 h-3.5" />
               <span>Book Appointment</span>
             </button>
+            <button
+              type="button"
+              onClick={() => void handleLogout()}
+              disabled={isLoggingOut}
+              className="inline-flex shrink-0 items-center rounded-lg border border-white/50 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/10 disabled:opacity-60"
+            >
+              {isLoggingOut ? 'Logging out...' : 'Log out'}
+            </button>
           </div>
         </div>
+        {logoutError && (
+          <div className="mb-6 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">
+            {logoutError}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Left Column: Appointments (Upcoming & Past) */}
@@ -215,14 +265,16 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
                         )}
 
                         <div className="pt-2 flex items-center justify-end gap-3">
-                          <button
-                            type="button"
-                            onClick={() => onTrackAppointment(apt.bookingReference)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
-                          >
-                            <RefreshCw className="w-3.5 h-3.5" />
-                            <span>Reschedule or Cancel</span>
-                          </button>
+                          {['pending', 'confirmed'].includes(apt.status) && (
+                            <button
+                              type="button"
+                              onClick={() => onTrackAppointment(apt.bookingReference)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+                            >
+                              <RefreshCw className="w-3.5 h-3.5" />
+                              <span>Reschedule or Cancel</span>
+                            </button>
+                          )}
                         </div>
                       </div>
                     );
@@ -321,15 +373,27 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={handleSaveProfile}
+                      onClick={() => void handleSaveProfile()}
+                      disabled={isSavingProfile}
                       className="text-xs font-semibold text-emerald-700 hover:underline flex items-center gap-1"
                     >
                       <Check className="w-3 h-3" />
-                      <span>Save</span>
+                      <span>{isSavingProfile ? 'Saving...' : 'Save'}</span>
                     </button>
                     <button
                       type="button"
-                      onClick={() => setIsEditingProfile(false)}
+                      onClick={() => {
+                        setProfileError(null);
+                        setProfileForm({
+                          phone: currentPatient.phone,
+                          email: currentPatient.email,
+                          emergencyContactName: currentPatient.emergencyContactName || '',
+                          emergencyContactPhone: currentPatient.emergencyContactPhone || '',
+                          preferredDentistId: currentPatient.preferredDentistId || '',
+                        });
+                        setIsEditingProfile(false);
+                      }}
+                      disabled={isSavingProfile}
                       className="text-xs text-slate-400 hover:text-slate-600"
                     >
                       <X className="w-3 h-3" />
@@ -337,6 +401,12 @@ export const PatientPortal: React.FC<PatientPortalProps> = ({
                   </div>
                 )}
               </div>
+
+              {profileError && (
+                <div className="rounded-lg border border-rose-200 bg-rose-50 p-2.5 text-xs text-rose-800">
+                  {profileError}
+                </div>
+              )}
 
               {!isEditingProfile ? (
                 <div className="space-y-3 text-xs text-slate-600">

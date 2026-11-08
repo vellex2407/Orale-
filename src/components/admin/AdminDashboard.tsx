@@ -42,6 +42,8 @@ interface AdminDashboardProps {
   settings: ClinicSettings;
   appointments: Appointment[];
   patients: Patient[];
+  workingHours: WorkingHours[];
+  timeOffs: TimeOff[];
   onRefreshData: () => void;
   onOpenBooking: () => void;
 }
@@ -52,6 +54,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   settings,
   appointments,
   patients,
+  workingHours,
+  timeOffs,
   onRefreshData,
   onOpenBooking,
 }) => {
@@ -92,22 +96,27 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [timeOffTitle, setTimeOffTitle] = useState<string>('Clinical Training / Leave');
   const [timeOffStart, setTimeOffStart] = useState<string>(todayStr);
   const [timeOffEnd, setTimeOffEnd] = useState<string>(todayStr);
+  const [timeOffReason, setTimeOffReason] = useState<string>('');
+  const [timeOffError, setTimeOffError] = useState<string | null>(null);
+  const [isTimeOffSubmitting, setIsTimeOffSubmitting] = useState<boolean>(false);
+  const [deletingTimeOffId, setDeletingTimeOffId] = useState<string | null>(null);
 
   // Edit service modal state
   const [editingService, setEditingService] = useState<DentalService | null>(null);
 
   // Working hours editing state
   const [selectedDentistScheduleId, setSelectedDentistScheduleId] = useState<string>(dentists[0]?.id || '');
+  const [editingSchedule, setEditingSchedule] = useState<WorkingHours | null>(null);
+  const [scheduleError, setScheduleError] = useState<string | null>(null);
+  const [savingScheduleId, setSavingScheduleId] = useState<string | null>(null);
 
   // Local copy of clinic settings
   const [localSettings, setLocalSettings] = useState<ClinicSettings>(settings);
   const [settingsSavedMessage, setSettingsSavedMessage] = useState<boolean>(false);
 
   // Data
-  // Appointments and patients are now supplied by MySQL through App.tsx.
+  // Appointments, patients, working hours, and time-off are supplied by MySQL through App.tsx.
   // Other dashboard data will be migrated in later steps.
-  const workingHours = DentalStorage.getWorkingHours();
-  const timeOffs = DentalStorage.getTimeOff();
   const notifications = DentalStorage.getNotifications();
   const auditLogs = DentalStorage.getAuditLogs();
 
@@ -149,6 +158,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         `/api/appointments/${statusActionModal.appointment.id}/status`,
         {
           method: 'PATCH',
+          credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
           },
@@ -201,6 +211,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     try {
       const response = await fetch('/api/admin/walk-in-appointments', {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -238,17 +249,117 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
   };
 
-  // Add time-off
-  const handleSaveTimeOff = () => {
-    DentalStorage.addTimeOff({
-      id: `to-${Date.now()}`,
-      dentistId: timeOffDentistId,
-      title: timeOffTitle,
-      startDate: timeOffStart,
-      endDate: timeOffEnd,
-    });
-    setIsTimeOffModalOpen(false);
-    onRefreshData();
+  const handleSaveSchedule = async (schedule: WorkingHours): Promise<boolean> => {
+    if (savingScheduleId) return false;
+
+    setScheduleError(null);
+    setSavingScheduleId(schedule.id);
+
+    try {
+      const response = await fetch('/api/admin/working-hours', {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(schedule),
+      });
+      const data: { message?: string } = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to save dentist schedule.');
+      }
+
+      onRefreshData();
+      return true;
+    } catch (error) {
+      console.error('Failed to save dentist schedule:', error);
+      setScheduleError(
+        error instanceof Error
+          ? error.message
+          : 'Unable to save dentist schedule. Please try again.'
+      );
+      return false;
+    } finally {
+      setSavingScheduleId(null);
+    }
+  };
+
+  const handleSaveTimeOff = async () => {
+    if (isTimeOffSubmitting) return;
+
+    setTimeOffError(null);
+    if (!timeOffDentistId || !timeOffTitle.trim() || !timeOffStart || !timeOffEnd) {
+      setTimeOffError('Clinician, event name, start date, and end date are required.');
+      return;
+    }
+    if (timeOffEnd < timeOffStart) {
+      setTimeOffError('End date cannot be earlier than the start date.');
+      return;
+    }
+
+    setIsTimeOffSubmitting(true);
+
+    try {
+      const response = await fetch('/api/admin/time-off', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          dentistId: timeOffDentistId,
+          title: timeOffTitle.trim(),
+          startDate: timeOffStart,
+          endDate: timeOffEnd,
+          reason: timeOffReason.trim() || undefined,
+        }),
+      });
+      const data: { message?: string } = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to save time-off dates.');
+      }
+
+      setIsTimeOffModalOpen(false);
+      setTimeOffReason('');
+      onRefreshData();
+    } catch (error) {
+      console.error('Failed to save time-off dates:', error);
+      setTimeOffError(
+        error instanceof Error
+          ? error.message
+          : 'Unable to save time-off dates. Please try again.'
+      );
+    } finally {
+      setIsTimeOffSubmitting(false);
+    }
+  };
+
+  const handleDeleteTimeOff = async (timeOffId: string) => {
+    if (deletingTimeOffId) return;
+
+    setTimeOffError(null);
+    setDeletingTimeOffId(timeOffId);
+
+    try {
+      const response = await fetch(
+        `/api/admin/time-off/${encodeURIComponent(timeOffId)}`,
+        { method: 'DELETE', credentials: 'include' }
+      );
+      const data: { message?: string } = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to remove time-off dates.');
+      }
+
+      onRefreshData();
+    } catch (error) {
+      console.error('Failed to remove time-off dates:', error);
+      setTimeOffError(
+        error instanceof Error
+          ? error.message
+          : 'Unable to remove time-off dates. Please try again.'
+      );
+    } finally {
+      setDeletingTimeOffId(null);
+    }
   };
 
   // Save clinic settings
@@ -675,7 +786,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <div className="flex w-full sm:w-auto items-center gap-3">
                 <select
                   value={selectedDentistScheduleId}
-                  onChange={(e) => setSelectedDentistScheduleId(e.target.value)}
+                  onChange={(e) => {
+                    setEditingSchedule(null);
+                    setSelectedDentistScheduleId(e.target.value);
+                  }}
                   className="min-w-0 flex-1 sm:flex-none bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-900"
                 >
                   {dentists.map((d) => (
@@ -696,13 +810,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </div>
             </div>
 
+            {scheduleError && (
+              <div className="p-3 bg-rose-50 text-rose-800 rounded-lg border border-rose-200 text-xs">
+                {scheduleError}
+              </div>
+            )}
+
             {/* Working Hours Table */}
             <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-2xs">
               <div className="p-4 border-b border-slate-200 font-bold text-sm text-slate-900">
                 Weekly Clinical Schedule for {dentists.find((d) => d.id === selectedDentistScheduleId)?.name}
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[640px] text-left text-xs text-slate-600">
+                <table className="w-full min-w-[760px] text-left text-xs text-slate-600">
                   <thead className="bg-slate-50 text-[11px] font-semibold text-slate-700 uppercase tracking-wider border-b border-slate-200">
                     <tr>
                       <th className="py-2.5 px-4">Day of Week</th>
@@ -718,42 +838,164 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       const wh = workingHours.find(
                         (w) => w.dentistId === selectedDentistScheduleId && w.dayOfWeek === dayIndex
                       );
+                      const isEditing = editingSchedule?.id === wh?.id && wh !== undefined;
+                      const isSaving = savingScheduleId === wh?.id;
 
                       return (
                         <tr key={dayIndex} className="hover:bg-slate-50/70">
                           <td className="py-3 px-4 font-semibold text-slate-900">{dayNames[dayIndex]}</td>
                           <td className="py-3 px-4">
-                            <span
-                              className={`px-2 py-0.5 rounded text-[11px] font-semibold ${
-                                wh?.isWorkingDay
-                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                  : 'bg-slate-100 text-slate-500'
-                              }`}
-                            >
-                              {wh?.isWorkingDay ? 'Active Clinic Day' : 'Day Off'}
-                            </span>
+                            {isEditing && editingSchedule ? (
+                              <select
+                                aria-label={`${dayNames[dayIndex]} working status`}
+                                value={editingSchedule.isWorkingDay ? 'on' : 'off'}
+                                onChange={(e) =>
+                                  setEditingSchedule({
+                                    ...editingSchedule,
+                                    isWorkingDay: e.target.value === 'on',
+                                  })
+                                }
+                                disabled={savingScheduleId !== null}
+                                className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs text-slate-900"
+                              >
+                                <option value="on">On</option>
+                                <option value="off">Off</option>
+                              </select>
+                            ) : (
+                              <span
+                                className={`px-2 py-0.5 rounded text-[11px] font-semibold ${
+                                  wh?.isWorkingDay
+                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                    : 'bg-slate-100 text-slate-500'
+                                }`}
+                              >
+                                {wh?.isWorkingDay ? 'Active Clinic Day' : 'Day Off'}
+                              </span>
+                            )}
                           </td>
                           <td className="py-3 px-4 font-mono">
-                            {wh?.isWorkingDay ? `${wh.startTime} – ${wh.endTime}` : '—'}
+                            {isEditing && editingSchedule ? (
+                              <div className="flex items-center gap-2">
+                                <input
+                                  aria-label={`${dayNames[dayIndex]} start time`}
+                                  type="time"
+                                  value={editingSchedule.startTime}
+                                  onChange={(e) =>
+                                    setEditingSchedule({ ...editingSchedule, startTime: e.target.value })
+                                  }
+                                  disabled={savingScheduleId !== null}
+                                  className="w-28 rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs text-slate-900"
+                                />
+                                <span>–</span>
+                                <input
+                                  aria-label={`${dayNames[dayIndex]} end time`}
+                                  type="time"
+                                  value={editingSchedule.endTime}
+                                  onChange={(e) =>
+                                    setEditingSchedule({ ...editingSchedule, endTime: e.target.value })
+                                  }
+                                  disabled={savingScheduleId !== null}
+                                  className="w-28 rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs text-slate-900"
+                                />
+                              </div>
+                            ) : (
+                              wh?.isWorkingDay ? `${wh.startTime} – ${wh.endTime}` : '—'
+                            )}
                           </td>
                           <td className="py-3 px-4 font-mono">
-                            {wh?.isWorkingDay && wh.breakStartTime ? `${wh.breakStartTime} – ${wh.breakEndTime}` : '—'}
+                            {isEditing && editingSchedule ? (
+                              <div className="flex items-center gap-2">
+                                <input
+                                  aria-label={`${dayNames[dayIndex]} break start time`}
+                                  type="time"
+                                  value={editingSchedule.breakStartTime}
+                                  onChange={(e) =>
+                                    setEditingSchedule({ ...editingSchedule, breakStartTime: e.target.value })
+                                  }
+                                  disabled={savingScheduleId !== null}
+                                  className="w-28 rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs text-slate-900"
+                                />
+                                <span>–</span>
+                                <input
+                                  aria-label={`${dayNames[dayIndex]} break end time`}
+                                  type="time"
+                                  value={editingSchedule.breakEndTime}
+                                  onChange={(e) =>
+                                    setEditingSchedule({ ...editingSchedule, breakEndTime: e.target.value })
+                                  }
+                                  disabled={savingScheduleId !== null}
+                                  className="w-28 rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs text-slate-900"
+                                />
+                              </div>
+                            ) : (
+                              wh?.isWorkingDay && wh.breakStartTime
+                                ? `${wh.breakStartTime} – ${wh.breakEndTime}`
+                                : '—'
+                            )}
                           </td>
                           <td className="py-3 px-4 text-right">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (!wh) return;
-                                DentalStorage.saveWorkingHours({
-                                  ...wh,
-                                  isWorkingDay: !wh.isWorkingDay,
-                                });
-                                onRefreshData();
-                              }}
-                              className="text-xs text-teal-700 font-semibold hover:underline"
-                            >
-                              {wh?.isWorkingDay ? 'Toggle Off' : 'Toggle On'}
-                            </button>
+                            {isEditing && editingSchedule ? (
+                              <div className="flex justify-end gap-3">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    void handleSaveSchedule(editingSchedule).then((saved) => {
+                                      if (saved) setEditingSchedule(null);
+                                    });
+                                  }}
+                                  disabled={savingScheduleId !== null}
+                                  className="text-xs text-teal-700 font-semibold hover:underline disabled:opacity-50"
+                                >
+                                  {isSaving ? 'Saving...' : 'Save Changes'}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingSchedule(null);
+                                    setScheduleError(null);
+                                  }}
+                                  disabled={savingScheduleId !== null}
+                                  className="text-xs text-slate-600 font-semibold hover:underline disabled:opacity-50"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="flex justify-end gap-3">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (wh) {
+                                      setScheduleError(null);
+                                      setEditingSchedule({ ...wh });
+                                    }
+                                  }}
+                                  disabled={!wh || savingScheduleId !== null || editingSchedule !== null}
+                                  className="text-xs text-teal-700 font-semibold hover:underline disabled:opacity-50"
+                                >
+                                  Edit Schedule
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (wh) {
+                                      void handleSaveSchedule({
+                                        ...wh,
+                                        isWorkingDay: !wh.isWorkingDay,
+                                      });
+                                    }
+                                  }}
+                                  disabled={!wh || savingScheduleId !== null || editingSchedule !== null}
+                                  className="text-xs text-teal-700 font-semibold hover:underline disabled:opacity-50"
+                                >
+                                  {isSaving
+                                    ? 'Saving...'
+                                    : wh?.isWorkingDay
+                                      ? 'Toggle Off'
+                                      : 'Toggle On'}
+                                </button>
+                              </div>
+                            )}
                           </td>
                         </tr>
                       );
@@ -768,6 +1010,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <h4 className="text-sm font-bold text-slate-900">
                 Scheduled Leaves & Unavailable Dates ({timeOffs.length})
               </h4>
+              {timeOffError && (
+                <div className="p-3 bg-rose-50 text-rose-800 rounded-lg border border-rose-200 text-xs">
+                  {timeOffError}
+                </div>
+              )}
               {timeOffs.length === 0 ? (
                 <p className="text-xs text-slate-500">No time-off or blocked dates currently registered.</p>
               ) : (
@@ -781,15 +1028,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <div className="font-mono text-[11px] text-teal-700 mt-1">
                           {to.startDate} to {to.endDate}
                         </div>
+                        {to.reason && (
+                          <div className="text-slate-600 mt-1">{to.reason}</div>
+                        )}
                         <button
                           type="button"
-                          onClick={() => {
-                            DentalStorage.deleteTimeOff(to.id);
-                            onRefreshData();
-                          }}
+                          onClick={() => void handleDeleteTimeOff(to.id)}
+                          disabled={deletingTimeOffId !== null}
                           className="mt-2 text-rose-700 text-[11px] font-semibold hover:underline"
                         >
-                          Remove Block
+                          {deletingTimeOffId === to.id ? 'Removing...' : 'Remove Block'}
                         </button>
                       </div>
                     );
@@ -1332,6 +1580,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </div>
 
               <div className="p-6 space-y-3.5 text-xs">
+                {timeOffError && (
+                  <div className="p-3 bg-rose-50 text-rose-800 rounded-lg border border-rose-200">
+                    {timeOffError}
+                  </div>
+                )}
                 <div>
                   <label className="text-slate-700 font-semibold block mb-1">Clinician</label>
                   <select
@@ -1354,6 +1607,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     value={timeOffTitle}
                     onChange={(e) => setTimeOffTitle(e.target.value)}
                     className="w-full bg-white border border-slate-300 rounded px-3 py-2"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-slate-700 font-semibold block mb-1">Additional Notes (optional)</label>
+                  <textarea
+                    value={timeOffReason}
+                    onChange={(e) => setTimeOffReason(e.target.value)}
+                    className="w-full bg-white border border-slate-300 rounded px-3 py-2"
+                    rows={2}
                   />
                 </div>
 
@@ -1382,16 +1645,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <button
                     type="button"
                     onClick={() => setIsTimeOffModalOpen(false)}
+                    disabled={isTimeOffSubmitting}
                     className="px-3.5 py-2 bg-slate-200 text-slate-700 rounded-lg font-medium"
                   >
                     Cancel
                   </button>
                   <button
                     type="button"
-                    onClick={handleSaveTimeOff}
+                    onClick={() => void handleSaveTimeOff()}
+                    disabled={isTimeOffSubmitting}
                     className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-semibold"
                   >
-                    Save & Block Dates
+                    {isTimeOffSubmitting ? 'Saving...' : 'Save & Block Dates'}
                   </button>
                 </div>
               </div>

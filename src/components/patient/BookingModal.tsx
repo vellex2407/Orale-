@@ -13,7 +13,7 @@ import {
   Download,
   ShieldCheck,
 } from 'lucide-react';
-import { DentalService, Dentist, ClinicSettings, Appointment } from '../../types';
+import { DentalService, Dentist, ClinicSettings, Appointment, Patient } from '../../types';
 import { formatDateReadable } from '../../services/storage';
 
 interface BookingModalProps {
@@ -21,6 +21,7 @@ interface BookingModalProps {
   onClose: () => void;
   initialServiceId?: string;
   initialDentistId?: string;
+  patientProfile?: Patient | null;
   services: DentalService[];
   dentists: Dentist[];
   settings: ClinicSettings;
@@ -33,6 +34,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   onClose,
   initialServiceId,
   initialDentistId,
+  patientProfile,
   services,
   dentists,
   settings,
@@ -95,6 +97,21 @@ export const BookingModal: React.FC<BookingModalProps> = ({
     if (initialDentistId) setSelectedDentistId(initialDentistId);
   }, [initialServiceId, initialDentistId]);
 
+  useEffect(() => {
+    if (!isOpen || !patientProfile) return;
+    setPatientInfo({
+      firstName: patientProfile.firstName,
+      lastName: patientProfile.lastName,
+      email: patientProfile.email,
+      phone: patientProfile.phone,
+      dateOfBirth: patientProfile.dateOfBirth,
+      emergencyContactName: patientProfile.emergencyContactName || '',
+      emergencyContactPhone: patientProfile.emergencyContactPhone || '',
+      insuranceProvider: patientProfile.insuranceProvider || 'Self-Pay / Private',
+      medicalAlerts: patientProfile.medicalAlerts || [],
+    });
+  }, [isOpen, patientProfile?.id]);
+
 // Fetch available slots from the MySQL-backed API
 useEffect(() => {
   if (!isOpen || !selectedServiceId || !selectedDate) return;
@@ -115,6 +132,7 @@ useEffect(() => {
       });
 
       const response = await fetch(`/api/availability?${params.toString()}`, {
+        credentials: 'include',
         signal: controller.signal,
       });
 
@@ -208,6 +226,7 @@ useEffect(() => {
     try {
       const response = await fetch('/api/appointments', {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
